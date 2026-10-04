@@ -1,12 +1,18 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import {
+  createSessionRecord,
+  deleteSessionRecord,
+  isSessionRecordActive,
+} from "./session-records";
 
 const SESSION_COOKIE = "session";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 type SessionPayload = {
   userId: string;
+  sessionId: string;
 };
 
 function getKey() {
@@ -38,32 +44,68 @@ export async function decrypt(session: string | undefined) {
     if (typeof payload.userId !== "string") {
       return null;
     }
-    return { userId: payload.userId };
+    if (typeof payload.sessionId !== "string") {
+      return null;
+    }
+    if (!isSessionRecordActive(payload.sessionId)) {
+      return null;
+    }
+    return { userId: payload.userId, sessionId: payload.sessionId };
   } catch {
     return null;
   }
 }
 
-export async function createSession(userId: string) {
-  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-  const session = await encrypt({ userId });
-  const cookieStore = await cookies();
-
-  cookieStore.set(SESSION_COOKIE, session, {
+function sessionCookieOptions(expires: Date) {
+  return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    expires: expiresAt,
-    sameSite: "lax",
+    expires,
+    sameSite: "lax" as const,
     path: "/",
-  });
+  };
+}
+
+export async function createSession(userId: string) {
+  const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
+  const sessionId = createSessionRecord(userId, expiresAt.getTime());
+  const session = await encrypt({ userId, sessionId });
+  const cookieStore = await cookies();
+
+  cookieStore.set(SESSION_COOKIE, session, sessionCookieOptions(expiresAt));
 }
 
 export async function deleteSession() {
   const cookieStore = await cookies();
-  cookieStore.delete(SESSION_COOKIE);
+  const token = cookieStore.get(SESSION_COOKIE)?.value;
+  const session = await decrypt(token);
+  if (session) {
+    deleteSessionRecord(session.sessionId);
+  } else if (token) {
+    try {
+      const { payload } = await jwtVerify(token, getKey(), {
+        algorithms: ["HS256"],
+      });
+      if (typeof payload.sessionId === "string") {
+        deleteSessionRecord(payload.sessionId);
+      }
+    } catch {
+      // Ignore invalid tokens while clearing the cookie.
+    }
+  }
+
+  cookieStore.set(
+    SESSION_COOKIE,
+    "",
+    sessionCookieOptions(new Date(0)),
+  );
 }
 
 export async function readSession() {
   const cookieStore = await cookies();
-  return decrypt(cookieStore.get(SESSION_COOKIE)?.value);
+  const session = await decrypt(cookieStore.get(SESSION_COOKIE)?.value);
+  if (!session) {
+    return null;
+  }
+  return { userId: session.userId };
 }
