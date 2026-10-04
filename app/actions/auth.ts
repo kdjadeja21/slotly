@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath, refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { readPicture } from "@/lib/picture";
 import { createSession, deleteSession } from "@/lib/session";
@@ -95,5 +96,7 @@ export async function signIn(
 
 export async function signOut() {
   await deleteSession();
+  revalidatePath("/", "layout");
+  refresh();
   redirect("/");
 }
