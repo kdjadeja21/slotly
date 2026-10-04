@@ -1,20 +1,45 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
+import {
+  PictureField,
+  type PictureFieldHandle,
+} from "@/app/components/picture-field";
+import { TimezoneSelect } from "@/app/components/timezone-select";
+import {
+  controlClassName,
+  FormAlert,
+  FormField,
+  SubmitButton,
+} from "@/app/components/form-controls";
 import { signUp, type AuthFormState } from "@/app/actions/auth";
 
 const initialState: AuthFormState = {};
 
 export function SignUpForm() {
+  const pictureFieldRef = useRef<PictureFieldHandle>(null);
   const [state, formAction, pending] = useActionState(signUp, initialState);
   const usernameError =
     state.errorField === "username" && state.error ? state.error : undefined;
   const formError = state.errorField === "username" ? undefined : state.error;
+  const usernameForAvatar = state.username ?? "";
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1" htmlFor="signup-username">
-        Username
+    <form
+      action={formAction}
+      className="flex flex-col gap-5"
+      encType="multipart/form-data"
+      onSubmit={() => {
+        pictureFieldRef.current?.syncFileInput();
+      }}
+    >
+      <FormField
+        label="Username"
+        htmlFor="signup-username"
+        required
+        error={usernameError}
+        errorId="signup-username-error"
+      >
         <input
           id="signup-username"
           name="username"
@@ -23,75 +48,53 @@ export function SignUpForm() {
           defaultValue={state.username}
           aria-invalid={usernameError ? true : undefined}
           aria-describedby={usernameError ? "signup-username-error" : undefined}
-          className="rounded border border-black/10 bg-transparent px-3 py-2 aria-invalid:border-red-600 dark:border-white/15 dark:aria-invalid:border-red-400"
+          className={controlClassName}
         />
-        {usernameError ? (
-          <p
-            id="signup-username-error"
-            role="alert"
-            className="text-sm text-red-600 dark:text-red-400"
-          >
-            {usernameError}
-          </p>
-        ) : null}
-      </label>
-      <label className="flex flex-col gap-1" htmlFor="signup-password">
-        Password
+      </FormField>
+      <FormField label="Password" htmlFor="signup-password" required>
         <input
           id="signup-password"
           name="password"
           type="password"
           autoComplete="new-password"
           required
-          className="rounded border border-black/10 bg-transparent px-3 py-2 dark:border-white/15"
+          className={controlClassName}
         />
-      </label>
-      <label className="flex flex-col gap-1" htmlFor="signup-name">
-        Name
+      </FormField>
+      <FormField label="Name" htmlFor="signup-name">
         <input
           id="signup-name"
           name="name"
           autoComplete="name"
           defaultValue={state.name}
-          className="rounded border border-black/10 bg-transparent px-3 py-2 dark:border-white/15"
+          className={controlClassName}
         />
-      </label>
-      <label className="flex flex-col gap-1" htmlFor="signup-picture">
-        Profile picture
-        <input
-          id="signup-picture"
-          name="picture"
-          type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif"
+      </FormField>
+      <FormField label="Profile picture" htmlFor="signup-picture">
+        <PictureField
+          ref={pictureFieldRef}
+          inputId="signup-picture"
+          displayName={state.name ?? ""}
+          username={usernameForAvatar}
         />
-      </label>
-      <label className="flex flex-col gap-1" htmlFor="signup-bio">
-        Bio
+      </FormField>
+      <FormField label="Bio" htmlFor="signup-bio">
         <textarea
           id="signup-bio"
           name="bio"
           rows={4}
           defaultValue={state.bio}
-          className="rounded border border-black/10 bg-transparent px-3 py-2 dark:border-white/15"
+          className={controlClassName}
         />
-      </label>
-      <label className="flex flex-col gap-1" htmlFor="signup-timezone">
-        Timezone
-        <input
+      </FormField>
+      <FormField label="Timezone" htmlFor="signup-timezone">
+        <TimezoneSelect
           id="signup-timezone"
-          name="timezone"
-          defaultValue={state.timezone}
-          className="rounded border border-black/10 bg-transparent px-3 py-2 dark:border-white/15"
+          defaultValue={state.timezone ?? ""}
         />
-      </label>
-      {formError ? <p role="alert">{formError}</p> : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="h-12 rounded-full bg-foreground px-5 text-background disabled:opacity-60"
-      >
-        Sign up
-      </button>
+      </FormField>
+      {formError ? <FormAlert>{formError}</FormAlert> : null}
+      <SubmitButton disabled={pending}>Sign up</SubmitButton>
     </form>
   );
 }
