@@ -86,7 +86,13 @@ export async function deleteSession() {
     deleteSessionRecord(payload.sessionId);
   }
 
-  cookieStore.delete(SESSION_COOKIE);
+  cookieStore.set(SESSION_COOKIE, "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    expires: new Date(0),
+    sameSite: "lax",
+    path: "/",
+  });
 }
 
 export async function readSession() {
