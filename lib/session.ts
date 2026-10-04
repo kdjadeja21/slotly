@@ -1,12 +1,18 @@
 import "server-only";
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import {
+  createSessionRecord,
+  deleteSessionRecord,
+  isSessionRecordActive,
+} from "./session-records";
 
 const SESSION_COOKIE = "session";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
 
 type SessionPayload = {
   userId: string;
+  sessionId: string;
 };
 
 function getKey() {
@@ -26,7 +32,7 @@ export async function encrypt(payload: SessionPayload) {
     .sign(getKey());
 }
 
-export async function decrypt(session: string | undefined) {
+async function verifiedPayload(session: string | undefined) {
   if (!session) {
     return null;
   }
@@ -38,15 +44,28 @@ export async function decrypt(session: string | undefined) {
     if (typeof payload.userId !== "string") {
       return null;
     }
-    return { userId: payload.userId };
+    if (typeof payload.sessionId !== "string") {
+      return null;
+    }
+    return { userId: payload.userId, sessionId: payload.sessionId };
   } catch {
     return null;
   }
 }
 
+export async function decrypt(session: string | undefined) {
+  const payload = await verifiedPayload(session);
+  if (!payload || !isSessionRecordActive(payload.sessionId)) {
+    return null;
+  }
+
+  return { userId: payload.userId };
+}
+
 export async function createSession(userId: string) {
   const expiresAt = new Date(Date.now() + SESSION_DURATION_MS);
-  const session = await encrypt({ userId });
+  const sessionId = createSessionRecord(userId, expiresAt.getTime());
+  const session = await encrypt({ userId, sessionId });
   const cookieStore = await cookies();
 
   cookieStore.set(SESSION_COOKIE, session, {
@@ -60,6 +79,13 @@ export async function createSession(userId: string) {
 
 export async function deleteSession() {
   const cookieStore = await cookies();
+  const payload = await verifiedPayload(
+    cookieStore.get(SESSION_COOKIE)?.value,
+  );
+  if (payload) {
+    deleteSessionRecord(payload.sessionId);
+  }
+
   cookieStore.delete(SESSION_COOKIE);
 }
 
