@@ -28,6 +28,52 @@ describe("username", () => {
     }
   });
 
+  test("rejects usernames shorter than 3 characters", () => {
+    for (const username of ["b", "ab", "  a "]) {
+      const result = validateUsername(username);
+      assert.equal(result.ok, false);
+      if (!result.ok) {
+        assert.equal(result.error, "too-short");
+        assert.equal(
+          usernameErrorMessage(result.error),
+          "Username must be at least 3 characters.",
+        );
+      }
+    }
+
+    const created = createUser({
+      username: "b",
+      password: "secret",
+      name: "B",
+      bio: "",
+      timezone: "",
+      picture: null,
+    });
+    assert.equal(created.ok, false);
+    if (!created.ok) {
+      assert.equal(created.error, "too-short");
+    }
+  });
+
+  test("accepts a username of exactly 3 characters", () => {
+    const result = validateUsername("  bob ");
+    assert.equal(result.ok, true);
+    if (result.ok) {
+      assert.equal(result.username, "bob");
+      assert.equal(result.normalized, "bob");
+    }
+
+    const created = createUser({
+      username: "bob",
+      password: "secret",
+      name: "Bob",
+      bio: "",
+      timezone: "",
+      picture: null,
+    });
+    assert.equal(created.ok, true);
+  });
+
   test("rejects usernames that are not allowed", () => {
     for (const username of ["bad/name", "bad\\name", ".", "..", "sign-in"]) {
       const result = validateUsername(username);

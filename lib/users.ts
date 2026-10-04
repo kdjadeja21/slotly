@@ -10,7 +10,9 @@ const RESERVED_USERNAMES = new Set([
   "avatars",
 ]);
 
-export type UsernameError = "required" | "invalid" | "taken";
+const USERNAME_MIN_LENGTH = 3;
+
+export type UsernameError = "required" | "invalid" | "too-short" | "taken";
 
 export type PublicProfile = {
   id: string;
@@ -39,6 +41,8 @@ export function usernameErrorMessage(error: UsernameError) {
       return "Username is required.";
     case "invalid":
       return "Username is not allowed.";
+    case "too-short":
+      return `Username must be at least ${USERNAME_MIN_LENGTH} characters.`;
     case "taken":
       return "Username is already taken.";
     default: {
@@ -67,6 +71,10 @@ export function validateUsername(
     normalized === ".."
   ) {
     return { ok: false, error: "invalid" };
+  }
+
+  if (username.length < USERNAME_MIN_LENGTH) {
+    return { ok: false, error: "too-short" };
   }
 
   return { ok: true, username, normalized };
