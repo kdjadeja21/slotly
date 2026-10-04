@@ -10,7 +10,7 @@ const RESERVED_USERNAMES = new Set([
   "avatars",
 ]);
 
-export type UsernameError = "required" | "taken";
+export type UsernameError = "required" | "invalid" | "taken";
 
 export type PublicProfile = {
   id: string;
@@ -37,6 +37,8 @@ export function usernameErrorMessage(error: UsernameError) {
   switch (error) {
     case "required":
       return "Username is required.";
+    case "invalid":
+      return "Username is not allowed.";
     case "taken":
       return "Username is already taken.";
     default: {
@@ -64,7 +66,7 @@ export function validateUsername(
     normalized === "." ||
     normalized === ".."
   ) {
-    return { ok: false, error: "taken" };
+    return { ok: false, error: "invalid" };
   }
 
   return { ok: true, username, normalized };

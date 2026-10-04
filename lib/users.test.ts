@@ -28,6 +28,20 @@ describe("username", () => {
     }
   });
 
+  test("rejects usernames that are not allowed", () => {
+    for (const username of ["bad/name", "bad\\name", ".", "..", "sign-in"]) {
+      const result = validateUsername(username);
+      assert.equal(result.ok, false);
+      if (!result.ok) {
+        assert.equal(result.error, "invalid");
+        assert.equal(
+          usernameErrorMessage(result.error),
+          "Username is not allowed.",
+        );
+      }
+    }
+  });
+
   test("rejects a username that is already taken, including a different case", () => {
     const created = createUser({
       username: "Ada",
