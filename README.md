@@ -1,5 +1,9 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Requirements
+
+Node.js 22 or newer. `lib/db.ts` imports `node:sqlite`, which is only available on Node.js 22+. Use the version in `.nvmrc` (`22`).
+
 ## Getting Started
 
 First, run the development server:
