@@ -13,6 +13,7 @@ import {
 
 export type AuthFormState = {
   error?: string;
+  errorField?: "username";
   username?: string;
   name?: string;
   bio?: string;
@@ -37,7 +38,11 @@ export async function signUp(
 
   const validatedUsername = validateUsername(username);
   if (!validatedUsername.ok) {
-    return { ...entered, error: usernameErrorMessage(validatedUsername.error) };
+    return {
+      ...entered,
+      error: usernameErrorMessage(validatedUsername.error),
+      errorField: "username",
+    };
   }
 
   if (password.trim() === "") {
@@ -59,11 +64,14 @@ export async function signUp(
   });
 
   if (!created.ok) {
-    const error =
-      created.error === "password-required"
-        ? "Password is required."
-        : usernameErrorMessage(created.error);
-    return { ...entered, error };
+    if (created.error === "password-required") {
+      return { ...entered, error: "Password is required." };
+    }
+    return {
+      ...entered,
+      error: usernameErrorMessage(created.error),
+      errorField: "username",
+    };
   }
 
   await createSession(created.user.id);
