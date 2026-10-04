@@ -1,12 +1,13 @@
 ---
-description: Branching strategy. main is the only long-lived branch; every change is a short-lived pull request.
+description: Branching strategy. develop is the only integration branch; every new pull request targets develop. main is protected and is not a pull request target.
 alwaysApply: true
 ---
 
 # Branching
 
-- main is the only long-lived branch. Do not commit directly to it.
-- All work is a short-lived branch and a pull request into main.
+- main is protected and is not a pull request target. Do not commit directly to it.
+- develop is the only integration branch.
+- All work is a short-lived branch and a pull request into develop, never main.
 - Branch name: <type>/SLOTLY-<number>-<short-slug>, where type is feature, fix, or chore.
 - One ticket per branch. Do not mix unrelated tickets.
 - Do not force-push main. Do not rewrite history on a branch someone else is reviewing.
