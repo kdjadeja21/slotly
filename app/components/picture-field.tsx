@@ -1,41 +1,91 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import {
+  forwardRef,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { ProfileAvatar } from "@/app/components/profile-avatar";
 
 const accept = "image/jpeg,image/png,image/webp,image/gif";
 
-export function PictureField({
-  inputId,
-  name = "picture",
-  existingSrc,
-  displayName,
-  username,
-}: {
-  inputId: string;
-  name?: string;
-  existingSrc?: string | null;
-  displayName: string;
-  username: string;
-}) {
+function assignFileToInput(input: HTMLInputElement, file: File | null) {
+  if (!file) {
+    input.value = "";
+    return;
+  }
+
+  const dataTransfer = new DataTransfer();
+  dataTransfer.items.add(file);
+  input.files = dataTransfer.files;
+}
+
+export type PictureFieldHandle = {
+  syncFileInput: () => void;
+};
+
+export const PictureField = forwardRef<
+  PictureFieldHandle,
+  {
+    inputId: string;
+    name?: string;
+    existingSrc?: string | null;
+    displayName: string;
+    username: string;
+  }
+>(function PictureField(
+  { inputId, name = "picture", existingSrc, displayName, username },
+  ref,
+) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
 
-  const shownSrc = previewUrl ?? existingSrc ?? null;
+  const shownSrc = selectedFile ? previewUrl : (existingSrc ?? null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      syncFileInput: () => {
+        const input = inputRef.current;
+        if (!input) {
+          return;
+        }
+        assignFileToInput(input, selectedFile);
+      },
+    }),
+    [selectedFile],
+  );
+
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) {
+      return;
+    }
+    assignFileToInput(input, selectedFile);
+  }, [selectedFile]);
+
+  function clearSelection() {
+    setSelectedFile(null);
+    setFileName(null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+    }
+  }
 
   function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     if (!file) {
-      setFileName(null);
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-      }
-      setPreviewUrl(null);
+      clearSelection();
       return;
     }
 
+    setSelectedFile(file);
     setFileName(file.name);
     const nextUrl = URL.createObjectURL(file);
     if (previewUrl) {
@@ -94,4 +144,4 @@ export function PictureField({
       </div>
     </div>
   );
-}
+});

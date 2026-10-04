@@ -1,7 +1,10 @@
 "use client";
 
-import { useActionState } from "react";
-import { PictureField } from "@/app/components/picture-field";
+import { useActionState, useRef } from "react";
+import {
+  PictureField,
+  type PictureFieldHandle,
+} from "@/app/components/picture-field";
 import { TimezoneSelect } from "@/app/components/timezone-select";
 import {
   controlClassName,
@@ -26,6 +29,7 @@ export function ProfileForm({
   timezone: string;
   pictureSrc: string | null;
 }) {
+  const pictureFieldRef = useRef<PictureFieldHandle>(null);
   const [state, formAction, pending] = useActionState(
     updateProfile,
     initialState,
@@ -34,7 +38,14 @@ export function ProfileForm({
   return (
     <section className="flex flex-col gap-5 border-t border-black/10 pt-8 dark:border-white/15">
       <h2 className="text-xl font-semibold tracking-tight">Edit profile</h2>
-      <form action={formAction} className="flex flex-col gap-5">
+      <form
+        action={formAction}
+        className="flex flex-col gap-5"
+        encType="multipart/form-data"
+        onSubmit={() => {
+          pictureFieldRef.current?.syncFileInput();
+        }}
+      >
         <FormField label="Name" htmlFor="profile-name">
           <input
             id="profile-name"
@@ -46,6 +57,7 @@ export function ProfileForm({
         </FormField>
         <FormField label="Profile picture" htmlFor="profile-picture">
           <PictureField
+            ref={pictureFieldRef}
             inputId="profile-picture"
             displayName={name}
             username={username}
