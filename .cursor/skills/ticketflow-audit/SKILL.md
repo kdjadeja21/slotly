@@ -5,7 +5,7 @@ description: Ticketflow Step 04 Audit. Use when running /tf-audit, or when a Tic
 
 # Ticketflow Step 04: Audit
 
-Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, and resume rule apply here.
+Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, resume rule, and agent-panel rules apply here. You are the parent for this step: call TodoWrite yourself. The thermo-nuclear sub-agent does not.
 
 ## Purpose
 
@@ -65,7 +65,7 @@ This check is required, and it runs only as a sub-agent. Do not score it yoursel
 ```text
 Full Repository Path: <absolute repo path>
 Diff: branch changes
-Custom Instructions: Review the Ticketflow change for <TICKET> against base branch <base_branch>. Return pass or fail under your Approval Bar, and the findings with file:line evidence.
+Custom Instructions: Review the Ticketflow change for <TICKET> against base branch <base_branch>. Return pass or fail under your Approval Bar, and the findings with file:line evidence. Do not call TodoWrite.
 ```
 
 - `pass` means no presumptive blockers under that skill's Approval Bar. Otherwise `fail`, with its findings. You write the result into `RUN.md`. The sub-agent does not.

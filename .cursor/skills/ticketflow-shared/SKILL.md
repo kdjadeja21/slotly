@@ -131,30 +131,32 @@ If a prerequisite is not met, do not start. Tell the user which command to run f
 
 ## Agent panel
 
-The parent agent keeps a five-item checklist in the Cursor agent panel (the todo list). This is what the user watches. `RUN.md` stays the record on disk. Do not create the checklist for `--status`.
+The todo list in the Cursor agent window is filled only by the **TodoWrite** tool. A checklist in chat, in a plan, or in `RUN.md` does not appear there. The parent agent calls TodoWrite. Sub-agents do not: a nested agent's call never shows in the parent window, which is the one the user is watching. Do not call TodoWrite for `--status`.
 
-Todo ids and labels:
+Every call sends **all five** todos and `merge: false`. A one-item call is rejected, and the window stays empty. Do not print the list as a substitute for the tool call.
 
-| id | Label |
-|----|--------|
-| `intake` | 01 Intake |
-| `step02` | 02 Investigate, 02 Blueprint, or "02 Step" until Intake sets the type |
-| `build` | 03 Build |
-| `audit` | 04 Audit |
-| `ship` | 05 Ship |
+| id | content |
+|----|---------|
+| `intake` | `01 Intake` |
+| `step02` | `02 Investigate`, `02 Blueprint`, or `02 Step` until Intake sets the type |
+| `build` | `03 Build` |
+| `audit` | `04 Audit` |
+| `ship` | `05 Ship` |
+
+Each todo has `id`, `content`, and `status`. `status` is `pending`, `in_progress`, `completed`, or `cancelled`.
 
 Map `RUN.md` step values to todo status: `done` → `completed`, `skipped` → `cancelled`, `in-progress` → `in_progress`, `pending` → `pending`. The unused Step 02 (`skipped`) is not its own todo; `step02` is only the step that will run. If that step is `skipped`, cancel `step02`.
 
-When to update:
+When to call TodoWrite (parent only):
 
-1. At the start of `/ticketflow` or any `/tf-*` command, create all five todos from the current `RUN.md`. On resume, mark finished steps `completed` immediately. If there is no `RUN.md` yet, all five are `pending` and `step02` is labeled "02 Step".
-2. Before a step starts, mark that todo `in_progress` and set that step in `RUN.md` to `in-progress` (parent write).
-3. After Intake classifies the ticket, rename `step02` to "02 Investigate" or "02 Blueprint" and cancel it if that path is `skipped`.
-4. When the step finishes, the parent writes `RUN.md`, marks the todo `completed` (or `cancelled` if `skipped`), then prints one line: `Step 03 Build complete → starting Step 04 Audit`.
-5. On `waiting-for-user` or `blocked`, leave the current todo `in_progress` and stop.
+1. At the start of `/ticketflow` or any `/tf-*` command, after reading `RUN.md` and before any sub-agent. On resume, finished steps are already `completed`. If there is no `RUN.md` yet, all five are `pending` and `step02` content is `02 Step`.
+2. Before a step starts, call it again with that todo `in_progress`, and set that step in `RUN.md` to `in-progress` (parent write).
+3. After Intake classifies the ticket, call it again with `step02` content `02 Investigate` or `02 Blueprint`, and `cancelled` if that path is `skipped`.
+4. When the step finishes, the parent writes `RUN.md`, calls TodoWrite with that todo `completed` (or `cancelled` if `skipped`), then prints one line: `Step 03 Build complete → starting Step 04 Audit`.
+5. On `waiting-for-user` or `blocked`, call TodoWrite with the current todo still `in_progress`, and stop.
 6. A standalone `/tf-*` command marks earlier steps from `RUN.md` and sets only its own step to `in_progress`. It does not start the next step.
 
-Only one todo is `in_progress` at a time.
+Only one todo is `in_progress` at a time. Resend the other four with their current statuses on every call.
 
 ## Procedure
 
@@ -162,9 +164,9 @@ Every step follows this sequence. The parent agent does this. A sub-agent does t
 
 1. Resolve the ticket key (Global rule 1).
 2. Read `RUN.md` and check the step's prerequisites.
-3. Set the agent-panel todo to `in_progress`. Set `current_step`, that step to `in-progress`, and `status: in-progress`, and write the file.
-4. Run the step. Intake, Audit (except the thermo-nuclear check), and Ship run in the parent. Investigate, Blueprint, and Build run as sub-agents. The thermo-nuclear check inside Audit runs as its own sub-agent.
-5. Write the step's section, the front-matter changes, and the resume hint. Mark the todo `completed`.
+3. Call TodoWrite with that step's todo `in_progress` (all five todos, `merge: false`). Set `current_step`, that step to `in-progress`, and `status: in-progress`, and write the file.
+4. Run the step. Intake, Audit (except the thermo-nuclear check), and Ship run in the parent. Investigate, Blueprint, and Build run as sub-agents. The thermo-nuclear check inside Audit runs as its own sub-agent. Sub-agents do not call TodoWrite.
+5. Write the step's section, the front-matter changes, and the resume hint. Call TodoWrite with that todo `completed`.
 6. Print the one-line handoff. Only then move on.
 
 ## Outputs

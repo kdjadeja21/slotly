@@ -7,7 +7,7 @@ description: Ticketflow Step 02a Investigate, for bugs only. Use when running /t
 
 Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, resume rule, and agent-panel rules apply here.
 
-When you are the **sub-agent** for this step: do the procedure, stay read-only, and return the `RUN.md` updates (front matter, section text, Build checklist, resume hint, and any questions). Do not create or edit `.cursor/ticketflow/`. The parent writes that file and the agent-panel checklist. If you must wait for the user, return `status: waiting-for-user` and the questions; do not continue.
+When you are the **sub-agent** for this step: do the procedure, stay read-only, and return the `RUN.md` updates (front matter, section text, Build checklist, resume hint, and any questions). Do not create or edit `.cursor/ticketflow/`. The parent writes that file and calls TodoWrite for the agent-window todo list. Do not call TodoWrite. If you must wait for the user, return `status: waiting-for-user` and the questions; do not continue.
 
 ## Purpose
 

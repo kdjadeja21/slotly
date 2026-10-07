@@ -11,7 +11,7 @@ Ticketflow Step 01 Intake only: fetch the Jira ticket, classify it, and create `
 ## Instructions
 
 1. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
-2. Create the five agent-panel todos from `RUN.md` (or all `pending` if there is no run yet). Mark `intake` `in_progress`.
+2. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md` (or all `pending` if there is no run yet). Set `intake` to `in_progress`. A markdown list does not show in the agent window.
 3. Follow `.cursor/skills/ticketflow-intake/SKILL.md` in this agent. Do not launch a sub-agent.
 4. Prerequisites: none.
-5. Run only this step. Write `RUN.md` yourself. When done, mark `intake` `completed`, rename `step02` to "02 Investigate" or "02 Blueprint", and print the classification and the next command (`/tf-investigate <TICKET>` for bugs, `/tf-blueprint <TICKET>` otherwise). Do not start the next step.
+5. Run only this step. Write `RUN.md` yourself. When done, call TodoWrite again with `intake` `completed` and `step02` content `02 Investigate` or `02 Blueprint`, and print the classification and the next command (`/tf-investigate <TICKET>` for bugs, `/tf-blueprint <TICKET>` otherwise). Do not start the next step.
