@@ -1,3 +1,9 @@
+---
+description: Run Ticketflow from intake to a raised PR. Publishes the five-step todo list on the first prompt, then continues.
+argument-hint: "[TICKET] [--from step] [--status]"
+disable-model-invocation: true
+---
+
 # /ticketflow
 
 Run the full Ticketflow workflow for a Jira ticket, from intake to a raised pull request. Stay in this agent. The user watches this window's TodoWrite list.
@@ -10,11 +16,29 @@ Run the full Ticketflow workflow for a Jira ticket, from intake to a raised pull
 - `--from intake|investigate|blueprint|build|audit|ship`: restart from that step.
 - `--status`: print the run summary and the resume hint, and do no work. Do not call TodoWrite.
 
-## Instructions
+## First prompt
 
-1. Call **TodoWrite** first (`merge: false`, all five todos: `intake`, `step02`, `build`, `audit`, `ship`) from `RUN.md`. On a new run, all five start `pending` and `step02` content is `02 Step`. A markdown list is not this call.
-2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules, run-file schema, thresholds, resume rule, and **Agent panel** section throughout.
-3. If `--status` is given: read `.cursor/ticketflow/<TICKET>/RUN.md` and print the ticket, type, status, each step's state, confidence, audit round and scores, open questions, and the resume hint. Stop.
+If this is the first user message in the conversation (and not `--status`):
+
+1. Call **TodoWrite** as the first tool (`merge: false`) with hardcoded todos. Do not read `RUN.md` or any other file first:
+
+   - `intake` / `01 Intake` / `in_progress`
+   - `step02` / `02 Step` / `pending`
+   - `build` / `03 Build` / `pending`
+   - `audit` / `04 Audit` / `pending`
+   - `ship` / `05 Ship` / `pending`
+
+   Cursor does not attach the todo card to the prompt that created it. A markdown list is not this call.
+2. Write `.cursor/ticketflow/_bootstrap.json` with `{"ticket":"<TICKET>","command":"ticketflow"}`.
+3. Print `Ticketflow todos published for <TICKET>.` and **stop**. The project stop hook sends the continue prompt.
+
+## Later prompts
+
+On the continue prompt or any later message, do not write `_bootstrap.json` and do not stop after TodoWrite.
+
+1. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules, run-file schema, thresholds, resume rule, and **Agent panel** section throughout.
+2. If `--status` is given: read `.cursor/ticketflow/<TICKET>/RUN.md` and print the ticket, type, status, each step's state, confidence, audit round and scores, open questions, and the resume hint. Stop.
+3. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md` if it exists; otherwise keep the hardcoded list. Then continue.
 4. If `--from <step>` is given: apply the `--from` reset described in `ticketflow-shared`, call TodoWrite again from the reset file, then continue from that step.
 5. Otherwise create or resume the run:
    - No `RUN.md`: start at Step 01.

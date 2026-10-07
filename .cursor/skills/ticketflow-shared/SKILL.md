@@ -40,7 +40,7 @@ To change a threshold, edit this table only.
 6. **Safety.** Never force-push. Never merge a PR. Never commit secrets. Never commit `.cursor/ticketflow/`. Never write to Jira unless the user explicitly asks.
 7. **Jira access.** Use the Jira/Atlassian tools already available in Cursor through the installed plugin. Discover them at runtime (for example search the dynamic tool catalog for `Atlassian` or `Jira`). If none are available, stop and tell the user.
 8. **Short summaries.** Keep each step's summary in `RUN.md` to 5 to 15 lines, factual.
-9. **Agent-window todos.** Call TodoWrite in this conversation (all five todos, `merge: false`) at the start of `/ticketflow` or `/tf-*`, before each step, and when a step finishes or waits. Do not hand Investigate, Blueprint, or Build to a nested agent — that is the window the user watches, and it stays empty unless this agent calls TodoWrite.
+9. **Agent-window todos.** Call TodoWrite in this conversation (all five todos, `merge: false`) at the start of `/ticketflow` or `/tf-*`, before each step, and when a step finishes or waits. On the **first user prompt** of a new chat, call TodoWrite with the hardcoded five todos, write `.cursor/ticketflow/_bootstrap.json`, and stop — Cursor does not attach the todo card to the prompt that created it; the stop hook sends the continue prompt. Do not hand Investigate, Blueprint, or Build to a nested agent.
 
 ## Run file schema
 
@@ -134,6 +134,8 @@ If a prerequisite is not met, do not start. Tell the user which command to run f
 
 The todo list in the Cursor agent window is filled only by the **TodoWrite** tool in **this** conversation (the one the user has open). A checklist in chat, in a plan, or in `RUN.md` does not appear there. A nested Task agent's TodoWrite fills that nested window, not this one. Do not call TodoWrite for `--status`.
 
+Cursor does not attach the todo card to the **first** user prompt that created it. The list appears on the **next** prompt. So the first `/ticketflow` or `/tf-*` prompt in a new chat must: (1) call TodoWrite with the hardcoded five todos, without reading files; (2) write `.cursor/ticketflow/_bootstrap.json`; (3) stop. The project `stop` hook then submits a continue prompt. Later prompts resume from `RUN.md` and must not bootstrap-stop.
+
 Do not send Investigate, Blueprint, or Build to a nested agent. Those steps are long. Cursor shows the nested run, and if that agent is told not to call TodoWrite the list the user is watching stays empty.
 
 Every call sends **all five** todos and `merge: false`. A one-item call is rejected, and the window stays empty. Do not print the list as a substitute for the tool call.
@@ -152,7 +154,7 @@ Map `RUN.md` step values to todo status: `done` → `completed`, `skipped` → `
 
 When to call TodoWrite:
 
-1. At the start of `/ticketflow` or any `/tf-*` command, after reading `RUN.md` and before any other tool. On resume, finished steps are already `completed`. If there is no `RUN.md` yet, all five are `pending` and `step02` content is `02 Step`.
+1. On the first user prompt of a new `/ticketflow` or `/tf-*` chat: hardcoded five todos, then bootstrap-stop (see above). On later prompts: after reading `RUN.md` if it exists. On resume, finished steps are already `completed`. If there is no `RUN.md` yet, all five are `pending` and `step02` content is `02 Step`.
 2. Before a step starts, call it again with that todo `in_progress`, and set that step in `RUN.md` to `in-progress`.
 3. After Intake classifies the ticket, call it again with `step02` content `02 Investigate` or `02 Blueprint`, and `cancelled` if that path is `skipped`.
 4. When the step finishes, write `RUN.md`, call TodoWrite with that todo `completed` (or `cancelled` if `skipped`), then print one line: `Step 03 Build complete → starting Step 04 Audit`.

@@ -30,6 +30,8 @@ When you run `/ticketflow PROJ-123` again, the agent reads `RUN.md`, finds the f
 
 The agent you are talking to publishes a five-step todo list in **this** agent window with the TodoWrite tool: Intake, Investigate or Blueprint, Build, Audit, Ship. The step that is running is marked in progress. Finished steps are marked done. A skipped path is cancelled. Text in the chat is not that list. The chat also prints one line when a step hands off, for example `Step 03 Build complete → starting Step 04 Audit`.
 
+Cursor does not attach that list to the **first** prompt that created it. `/ticketflow` therefore publishes the five todos on the first prompt and stops; a project hook immediately sends a continue prompt so the card can show, then the rest of the run continues in the same chat.
+
 Intake, Investigate, Blueprint, Build, Audit, and Ship all run in that same agent, so the list stays on the window you are watching. The thermo-nuclear review is the only nested agent. Nested runs have a different window; their TodoWrite does not fill this one.
 
 If Ticketflow is waiting on you or blocked, the current checklist item stays in progress and the chat shows the question. `/ticketflow PROJ-123 --status` still prints the same state from `RUN.md` and does not change the checklist.
@@ -282,7 +284,7 @@ PRs should follow [.cursor/rules/pr-model-attribution.mdc](.cursor/rules/pr-mode
 | Pull not fast-forward | Ship stops; check `git stash list`, update base, restore work, `/tf-ship` again |
 | Thermo-nuclear unavailable | Install `cursor-team-kit`; audit treats review as fail until it runs |
 | UI skills missing | `npx skills@latest add emilkowalski/skills`; Build/Audit still run with shadcn + Tailwind fallback |
-| Agent window todo list stays empty | Re-run the command in this same chat. The agent must call TodoWrite here (all five items). Nested Investigate/Blueprint/Build runs hide the list. `--status` does not publish it. A checklist written only in the chat never shows there. |
+| Agent window todo list stays empty | The card does not attach to the prompt that created it. `/ticketflow` publishes todos on the first prompt and auto-continues so they can show. If you still see nothing, send any follow-up in the same chat. Nested Investigate/Blueprint/Build runs hide the list. `--status` does not publish it. A checklist written only in the chat never shows there. |
 
 Ticketflow **will not** force-push, merge PRs, commit secrets, commit run folders, or write to Jira unless you explicitly ask.
 

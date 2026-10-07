@@ -1,3 +1,9 @@
+---
+description: Ticketflow Step 05 Ship. Publishes todos on the first prompt, then opens the pull request.
+argument-hint: "[TICKET]"
+disable-model-invocation: true
+---
+
 # /tf-ship
 
 Ticketflow Step 05 Ship only: create the branch, commit, push, and raise the pull request. Runs in this agent.
@@ -10,7 +16,11 @@ Ticketflow Step 05 Ship only: create the branch, commit, push, and raise the pul
 
 ## Instructions
 
-1. Call **TodoWrite** first (`merge: false`, all five todos) from `RUN.md`. Set `ship` to `in_progress` and set `05-ship: in-progress` in `RUN.md`.
+If this is the first user message in the conversation: call TodoWrite first (`merge: false`) with `intake`/`step02`/`build`/`audit` `completed` and `ship` `in_progress`. Do not read files first. Write `.cursor/ticketflow/_bootstrap.json` as `{"ticket":"<TICKET>","command":"tf-ship"}`. Print `Ticketflow todos published for <TICKET>.` and **stop**.
+
+On a later prompt, do not bootstrap. Then:
+
+1. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md`. Set `ship` to `in_progress` and set `05-ship: in-progress` in `RUN.md`.
 2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
 3. Prerequisites: `04-audit: done` with a passing result, or an explicit user override recorded in `RUN.md`. If not, refuse and tell the user to run `/tf-audit <TICKET>` first.
 4. Follow `.cursor/skills/ticketflow-ship/SKILL.md` in this agent. Do not launch a sub-agent. You write `RUN.md`.

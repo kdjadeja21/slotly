@@ -1,3 +1,9 @@
+---
+description: Ticketflow Step 01 Intake. Publishes the five-step todo list on the first prompt, then classifies the Jira ticket.
+argument-hint: "[TICKET]"
+disable-model-invocation: true
+---
+
 # /tf-intake
 
 Ticketflow Step 01 Intake only: fetch the Jira ticket, classify it, and create `RUN.md`. Runs in this agent.
@@ -10,7 +16,11 @@ Ticketflow Step 01 Intake only: fetch the Jira ticket, classify it, and create `
 
 ## Instructions
 
-1. Call **TodoWrite** first (`merge: false`, all five todos) from `RUN.md` (or all `pending` if there is no run yet). Set `intake` to `in_progress`. A markdown list does not show in the agent window.
+If this is the first user message in the conversation: call TodoWrite first (`merge: false`) with `intake` `in_progress` and the other four steps `pending` (`step02` content `02 Step`). Do not read files first. Write `.cursor/ticketflow/_bootstrap.json` as `{"ticket":"<TICKET>","command":"tf-intake"}`. Print `Ticketflow todos published for <TICKET>.` and **stop**.
+
+On a later prompt, do not bootstrap. Then:
+
+1. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md` (or all `pending` if there is no run yet). Set `intake` to `in_progress`. A markdown list does not show in the agent window.
 2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
 3. Follow `.cursor/skills/ticketflow-intake/SKILL.md` in this agent. Do not launch a sub-agent.
 4. Prerequisites: none.
