@@ -129,7 +129,9 @@ If a prerequisite is not met, do not start. Tell the user which command to run f
 
 `--from <step>` restarts from that step: set that step and every later step back to `pending` (keep `skipped` steps skipped), set `current_step`, and continue. When restarting from `build` or earlier, reset `audit_round` to 0 and clear `scores`.
 
-## Procedure (for every step)
+## Procedure
+
+Every step follows this sequence:
 
 1. Resolve the ticket key (Global rule 1).
 2. Read `RUN.md` and check the step's prerequisites.
