@@ -20,7 +20,7 @@ Fetch the Jira ticket, classify it, create the run file, and route to the right 
 ## Prerequisites
 
 - Jira/Atlassian tools are available (shared Global rule 7). If none are found, stop and tell the user.
-- No prerequisite step. If `RUN.md` already exists with `01-intake: done`, ask whether to re-run intake (overwriting the Intake section) or resume with `/ticketflow <TICKET>`.
+- No prerequisite step. If `RUN.md` already exists with `01-intake: done`, ask with the AskQuestion tool whether to re-run intake (overwriting the Intake section) or resume with `/ticketflow <TICKET>`.
 
 ## Procedure
 
@@ -29,7 +29,7 @@ Fetch the Jira ticket, classify it, create the run file, and route to the right 
    - `bug`: existing behavior is wrong compared with what is expected.
    - `improvement`: existing behavior works but should change or get better.
    - `new-requirement`: a capability that does not exist yet.
-   - If the ticket is too thin or ambiguous to classify confidently, ask the user before continuing. Set `status: waiting-for-user` and write the question to the run file.
+   - If the ticket is too thin or ambiguous to classify confidently, ask the user with the AskQuestion tool before continuing. Set `status: waiting-for-user` and write the question to the run file.
 3. Record the base branch with `git branch --show-current`.
 4. Create `.cursor/ticketflow/<TICKET>/RUN.md` using the schema in `ticketflow-shared`, and fill in the Intake section: summary, type, reason, and acceptance criteria as a numbered list (AC1, AC2, ...). If the ticket has no explicit acceptance criteria, write "None stated in ticket" and list them as an open question for Step 02. Do not invent them.
 5. Route: `bug` goes to Step 02a (`ticketflow-investigate`). `improvement` or `new-requirement` goes to Step 02b (`ticketflow-blueprint`).
@@ -49,4 +49,4 @@ Fetch the Jira ticket, classify it, create the run file, and route to the right 
 
 - Ticket not found or no permission: stop, report the exact error, and do not create `RUN.md`.
 - Jira tools need authentication: tell the user to authenticate the Atlassian plugin, then re-run.
-- Not in a git repository, or `git branch --show-current` returns nothing (detached HEAD): ask the user which base branch to use.
+- Not in a git repository, or `git branch --show-current` returns nothing (detached HEAD): ask the user with the AskQuestion tool which base branch to use.

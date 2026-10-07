@@ -25,7 +25,7 @@ Find the root cause of a bug, with evidence and a confidence score, and produce 
 ## Procedure
 
 1. **Read-only.** Do not edit, create, or delete any file except `RUN.md`. Do not run commands that change state (no installs, no migrations, no git writes). Reading files, searching, `git log`, `git blame`, `git diff`, and running existing tests are allowed.
-2. **Ask first.** List any questions about missing repro steps, environment, expected behavior, or scope. Write them under "Open questions / waiting on user", set `status: waiting-for-user`, and wait for the answers before investigating further. If nothing is unclear, say so and continue.
+2. **Ask first.** List any questions (the parent asks them with the AskQuestion tool) about missing repro steps, environment, expected behavior, or scope. Write them under "Open questions / waiting on user", set `status: waiting-for-user`, and wait for the answers before investigating further. If nothing is unclear, say so and continue.
 3. **Explore the codebase:**
    - Find the entry point for the failing behavior (route, handler, component, command).
    - Trace the failing path through the code.

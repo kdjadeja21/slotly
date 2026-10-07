@@ -32,7 +32,7 @@ The agent you are talking to publishes a five-step todo list in **this** agent w
 
 The desktop Agents Window pins that card to the **first** prompt. The mobile app shows the session list, so the phone can show todos while desktop does not. `/ticketflow` publishes the five todos on the first prompt (`merge: false`) and stops; a project hook sends a continue prompt. Later updates use `merge: true` so desktop keeps the original card instead of creating a new one it will not paint. On desktop, if the card is still missing, scroll to the first message in the Agents Window — it is not a sticky header the way it is on mobile.
 
-Intake, Investigate, Blueprint, and Build each run as a nested Task (`01 Intake`, `02 Investigate`, `02 Blueprint`, `03 Build`) so the desktop Agents Window can show those sub-tasks. The parent still publishes the five-step TodoWrite list. Audit (except the thermo-nuclear review) and Ship stay in the parent. Each nested agent also calls TodoWrite so its own window is not empty.
+Intake, Investigate, Blueprint, Build deps, and Build each run as a nested Task (`01 Intake`, `02 Investigate`, `02 Blueprint`, `03 Build deps`, `03 Build`) so the desktop Agents Window can show those sub-tasks. The parent still publishes the five-step TodoWrite list. Audit (except the thermo-nuclear review) and Ship stay in the parent. Each nested agent also calls TodoWrite so its own window is not empty.
 
 If Ticketflow is waiting on you or blocked, the current checklist item stays in progress and the chat shows the question. `/ticketflow PROJ-123 --status` still prints the same state from `RUN.md` and does not change the checklist.
 
@@ -76,6 +76,8 @@ flowchart TB
   audit -->|still failing| blocked[Blocked — you decide]
 ```
 
+**Questions:** every question Ticketflow asks you uses Cursor's native question UI (the AskQuestion tool), not plain chat text. Nested sub-agents return their questions and the parent agent asks them.
+
 **Gates (where Ticketflow stops for you):**
 
 - **Intake:** ticket too vague to classify → questions, then wait.
@@ -104,7 +106,7 @@ Set these up once:
 | **`cursor-team-kit`** plugin | Step 04 runs the thermo-nuclear code quality review |
 | **`gh auth login`** or **GitHub MCP** | Step 05 opens the PR |
 | **Dev environment** that runs (e.g. `npm run dev`) | Step 04 checks UI in the browser when possible |
-| **UI skills** (optional but recommended) | `npx skills@latest add emilkowalski/skills` — used in Build/Audit for design and motion, alongside the built-in `ticketflow-design-system` skill |
+| **UI skills** (installed automatically) | `03 Build deps` runs `npx skills@latest add emilkowalski/skills` for UI tickets; used in Build/Audit alongside the built-in `ticketflow-design-system` skill |
 
 **Start on the branch you want the PR to target** (often `main`). Intake records that branch in `RUN.md` as `base_branch`; Ship opens the PR against it.
 
@@ -201,6 +203,7 @@ Each step command **refuses** to run if the previous required step isn’t done 
 
 ### 03 — Build
 
+- A separate **`03 Build deps`** sub-agent runs first. For tickets with UI work it installs shadcn/ui (`init` + only the components the plan needs), `motion`/`gsap` when the plan needs them, and the `emilkowalski/skills` skills, then records **Deps notes** in `RUN.md`. These installs are pre-approved; any other new dependency is asked about first.
 - Executes the checklist; ticks tasks in `RUN.md`.
 - Detects **your project’s stack** (not assumed React); applies [.cursor/skills/ticketflow-build/performance.md](.cursor/skills/ticketflow-build/performance.md).
 - UI: loading, empty, error states, a11y, responsive layout when there is UI.

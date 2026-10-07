@@ -21,7 +21,7 @@ Check for `components.json`, `components/ui/`, `lib/utils.ts`, a `@theme` block 
 2. Confirm Tailwind v4 is set up through `@tailwindcss/postcss`. Do not add a `tailwind.config.js` or `@tailwind` directives.
 3. Run `npx shadcn@latest init` (CSS variables on, `cn` helper, `lucide-react` icons). Use the shadcn MCP or `npx shadcn@latest docs <component>` for current APIs.
 4. Add only the components the plan needs: `npx shadcn@latest add <name>`. Do not bulk-add the registry.
-5. If the plan did not list a dependency (shadcn itself, `motion`, `gsap`), ask before adding it, per the Build failure-handling rule.
+5. shadcn/ui, `motion`, `gsap`, and the `emilkowalski/skills` skills are pre-approved for UI work. The `03 Build deps` sub-agent (`../ticketflow-build-deps/SKILL.md`) installs them before Build. Any other new dependency needs approval, asked with the AskQuestion tool.
 6. Keep the changes small. Do not restyle pages the ticket does not touch.
 
 ## 3. Tokens
@@ -78,4 +78,4 @@ Rules:
 - [ ] Contrast, focus, labels, keyboard, touch targets verified
 - [ ] Responsive at 320px, 768px, 1280px
 - [ ] Motion limited to transform and opacity, reduced motion respected
-- [ ] No invented content; no dependencies added without approval
+- [ ] No invented content; no dependencies added beyond the pre-approved set without approval
