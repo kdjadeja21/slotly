@@ -5,7 +5,9 @@ description: Ticketflow Step 03 Build. Use when running /tf-build, when executin
 
 # Ticketflow Step 03: Build
 
-Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, resume rule, and agent-panel rules apply here. Run this step in this agent. Call TodoWrite yourself. Write `RUN.md` yourself. Do not commit. Do not launch a Task sub-agent.
+Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, resume rule, and agent-panel rules apply here.
+
+When you are the **sub-agent** for this step: call TodoWrite first (`merge: false`, the five Ticketflow todos, `build` `in_progress`). Do the procedure, including code and test changes, and return the `RUN.md` updates. Do not commit. Call TodoWrite again with `merge: true` when you finish. The parent writes `RUN.md` and also calls TodoWrite.
 
 ## Purpose
 

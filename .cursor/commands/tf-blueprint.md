@@ -1,12 +1,12 @@
 ---
-description: Ticketflow Step 02b Blueprint. Publishes todos on the first prompt, then writes the implementation plan.
+description: Ticketflow Step 02b Blueprint. Publishes todos on the first prompt, then writes the implementation plan as a sub-task.
 argument-hint: "[TICKET]"
 disable-model-invocation: true
 ---
 
 # /tf-blueprint
 
-Ticketflow Step 02b Blueprint only (improvements and new requirements): read-only implementation plan. Start this in Plan mode (Shift+Tab). Runs in this agent so the agent-window todo list stays visible.
+Ticketflow Step 02b Blueprint only (improvements and new requirements): read-only implementation plan. Start this in Plan mode (Shift+Tab). The work runs in a Task sub-agent named `02 Blueprint`. You write `RUN.md`.
 
 ## Arguments
 
@@ -20,9 +20,9 @@ If this is the first user message in the conversation: call TodoWrite first (`me
 
 On a later prompt, do not bootstrap. Then:
 
-1. Call **TodoWrite** (`merge: true`, same five ids) from `RUN.md`. Set `step02` to `in_progress` with content `02 Blueprint`, and set `02-blueprint: in-progress` in `RUN.md`. Do not use `merge: false` again — that hides the card on desktop.
+1. Call **TodoWrite** (`merge: true`, same five ids) from `RUN.md`. Set `step02` to `in_progress` with content `02 Blueprint`, and set `02-blueprint: in-progress` in `RUN.md`. Do not use `merge: false` again in this parent chat.
 2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
 3. Prerequisites: `RUN.md` exists, `01-intake: done`, and `type` is `improvement` or `new-requirement`. If intake is not done, refuse and tell the user to run `/tf-intake <TICKET>` first. If the type is `bug`, refuse and tell the user to run `/tf-investigate <TICKET>`.
 4. If you are not in Plan mode, tell the user once to switch (Shift+Tab).
-5. Follow `.cursor/skills/ticketflow-blueprint/SKILL.md` in this agent. Stay read-only. Write `RUN.md` yourself. Do not launch a Task sub-agent.
-6. Run only this step. When done, call TodoWrite with `step02` `completed`, and print a short plan summary and the next command (`/tf-build <TICKET>`). If the result is `waiting-for-user`, call TodoWrite with `step02` still `in_progress` and stop. Do not start the next step.
+5. Launch a Task sub-agent (`generalPurpose`, `run_in_background` false, description exactly `02 Blueprint`). Prompt: follow `.cursor/skills/ticketflow-blueprint/SKILL.md` for `<TICKET>`; stay read-only; call TodoWrite in that sub-agent (`merge: false` first, then `merge: true`); return the `RUN.md` updates; do not commit.
+6. Write `RUN.md` from the result. Run only this step. When done, call TodoWrite (`merge: true`) with `step02` `completed`, and print a short plan summary and the next command (`/tf-build <TICKET>`). If the result is `waiting-for-user`, call TodoWrite with `step02` still `in_progress` and stop. Do not start the next step.

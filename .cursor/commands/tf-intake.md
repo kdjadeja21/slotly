@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # /tf-intake
 
-Ticketflow Step 01 Intake only: fetch the Jira ticket, classify it, and create `RUN.md`. Runs in this agent.
+Ticketflow Step 01 Intake only: fetch the Jira ticket, classify it, and create `RUN.md`. The work runs in a Task sub-agent named `01 Intake`. You write `RUN.md`.
 
 ## Arguments
 
@@ -22,6 +22,6 @@ On a later prompt, do not bootstrap. Then:
 
 1. Call **TodoWrite** (`merge: true`, same five ids) from `RUN.md` (or keep the first-prompt list). Set `intake` to `in_progress`. Do not use `merge: false` again — that hides the card on desktop.
 2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
-3. Follow `.cursor/skills/ticketflow-intake/SKILL.md` in this agent. Do not launch a sub-agent.
+3. Launch a Task sub-agent (`generalPurpose`, `run_in_background` false, description exactly `01 Intake`). Prompt: follow `.cursor/skills/ticketflow-intake/SKILL.md` for `<TICKET>`; call TodoWrite in that sub-agent (`merge: false` first, then `merge: true`); return the `RUN.md` updates; do not commit.
 4. Prerequisites: none.
-5. Run only this step. Write `RUN.md` yourself. When done, call TodoWrite again with `intake` `completed` and `step02` content `02 Investigate` or `02 Blueprint`, and print the classification and the next command (`/tf-investigate <TICKET>` for bugs, `/tf-blueprint <TICKET>` otherwise). Do not start the next step.
+5. Write `RUN.md` from the result. Run only this step. When done, call TodoWrite (`merge: true`) with `intake` `completed` and `step02` content `02 Investigate` or `02 Blueprint`, and print the classification and the next command (`/tf-investigate <TICKET>` for bugs, `/tf-blueprint <TICKET>` otherwise). Do not start the next step.

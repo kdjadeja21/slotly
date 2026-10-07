@@ -5,7 +5,9 @@ description: Ticketflow Step 02a Investigate, for bugs only. Use when running /t
 
 # Ticketflow Step 02a: Investigate (bugs)
 
-Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, resume rule, and agent-panel rules apply here. Run this step in this agent. Call TodoWrite yourself. Write `RUN.md` yourself. Do not launch a Task sub-agent.
+Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, resume rule, and agent-panel rules apply here.
+
+When you are the **sub-agent** for this step: call TodoWrite first (`merge: false`, the five Ticketflow todos, `step02` `in_progress` with content `02 Investigate`). Do the procedure, stay read-only, and return the `RUN.md` updates. Do not commit. Call TodoWrite again with `merge: true` when you finish. The parent writes `RUN.md` and also calls TodoWrite.
 
 ## Purpose
 

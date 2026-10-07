@@ -40,7 +40,7 @@ To change a threshold, edit this table only.
 6. **Safety.** Never force-push. Never merge a PR. Never commit secrets. Never commit `.cursor/ticketflow/`. Never write to Jira unless the user explicitly asks.
 7. **Jira access.** Use the Jira/Atlassian tools already available in Cursor through the installed plugin. Discover them at runtime (for example search the dynamic tool catalog for `Atlassian` or `Jira`). If none are available, stop and tell the user.
 8. **Short summaries.** Keep each step's summary in `RUN.md` to 5 to 15 lines, factual.
-9. **Agent-window todos.** On the **first user prompt** of a new `/ticketflow` or `/tf-*` chat, call TodoWrite with the hardcoded five todos and `merge: false`, write `.cursor/ticketflow/_bootstrap.json`, and stop. The stop hook sends the continue prompt. Every later TodoWrite uses **`merge: true`** and the same five ids — `merge: false` on a later prompt hides the card on desktop (mobile still shows it). Do not hand Investigate, Blueprint, or Build to a nested agent.
+9. **Agent-window todos.** On the **first user prompt** of a new `/ticketflow` or `/tf-*` chat, call TodoWrite with the hardcoded five todos and `merge: false`, write `.cursor/ticketflow/_bootstrap.json`, and stop. The stop hook sends the continue prompt. Every later parent TodoWrite uses **`merge: true`**. Launch Intake, Investigate, Blueprint, and Build as Task sub-agents with descriptions `01 Intake`, `02 Investigate`, `02 Blueprint`, `03 Build`. The parent and the sub-agent both call TodoWrite.
 
 ## Run file schema
 
@@ -138,7 +138,7 @@ The desktop Agents Window pins the todo card to the **first** user prompt. The m
 
 So the first `/ticketflow` or `/tf-*` prompt in a new chat must: (1) call TodoWrite with the hardcoded five todos and `merge: false`, without reading files; (2) write `.cursor/ticketflow/_bootstrap.json`; (3) stop. The project `stop` hook then submits a continue prompt. Later prompts resume from `RUN.md`, must not bootstrap-stop, and must call TodoWrite with **`merge: true`**.
 
-Do not send Investigate, Blueprint, or Build to a nested agent. Those steps are long. Cursor shows the nested run, and if that agent is told not to call TodoWrite the list the user is watching stays empty.
+Launch Intake, Investigate, Blueprint, and Build as Task sub-agents. The Task `description` is the step title (`01 Intake`, and so on) so desktop shows those sub-tasks. Call TodoWrite in the parent before each Task. The sub-agent also calls TodoWrite (`merge: false` on its first call) so its window is not empty.
 
 The first call in a chat uses `merge: false` and all five todos. Every later call uses `merge: true` and the same five ids. A one-item call is rejected, and the window stays empty. Do not print the list as a substitute for the tool call.
 
@@ -172,7 +172,7 @@ Every step follows this sequence in this agent.
 1. Resolve the ticket key (Global rule 1).
 2. Read `RUN.md` and check the step's prerequisites.
 3. Call TodoWrite with that step's todo `in_progress` (all five todos, `merge: true` after the first prompt). Set `current_step`, that step to `in-progress`, and `status: in-progress`, and write the file.
-4. Run the step in this agent and write `RUN.md` yourself. The only nested agent is the thermo-nuclear review inside Audit. Launch it only after this agent's TodoWrite list is already showing. That nested agent must not call TodoWrite.
+4. Run Intake, Investigate, Blueprint, and Build as Task sub-agents (description `01 Intake` / `02 Investigate` / `02 Blueprint` / `03 Build`). Call TodoWrite in this parent first. The sub-agent also calls TodoWrite. You write `RUN.md` when it returns. Audit (except thermo-nuclear) and Ship stay in this agent. The thermo-nuclear nested agent must not call TodoWrite.
 5. Write the step's section, the front-matter changes, and the resume hint. Call TodoWrite with that todo `completed`.
 6. Print the one-line handoff. Only then move on.
 

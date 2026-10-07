@@ -5,7 +5,9 @@ description: Ticketflow Step 01 Intake. Use when starting a Ticketflow run, when
 
 # Ticketflow Step 01: Intake
 
-Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, resume rule, and agent-panel rules apply here. Run this step in this agent. Call TodoWrite yourself. Do not launch a sub-agent.
+Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, resume rule, and agent-panel rules apply here.
+
+When you are the **sub-agent** for this step: call TodoWrite first (`merge: false`, the five Ticketflow todos, `intake` `in_progress`). Do the procedure. Return the `RUN.md` updates. Do not commit. Call TodoWrite again with `merge: true` when you finish (`intake` `completed`). The parent writes `RUN.md` and also calls TodoWrite so the desktop parent window and this nested window both have a list.
 
 ## Purpose
 

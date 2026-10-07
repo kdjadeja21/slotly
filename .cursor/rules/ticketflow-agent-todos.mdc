@@ -29,8 +29,8 @@ The desktop Agents Window anchors the todo card to the **first** user prompt and
 
 Do not write `_bootstrap.json`. Do not stop after TodoWrite. Resume from `RUN.md`.
 
-Call TodoWrite with **`merge: true`** and the same five ids. Never use `merge: false` again in this chat: that replaces the list and anchors a new card to the current prompt, which desktop does not show (mobile still does). Send at least two todos per call.
+Call TodoWrite with **`merge: true`** and the same five ids. Never use `merge: false` again in this parent chat.
 
-Do not send Investigate, Blueprint, or Build to a nested agent.
+Launch Intake, Investigate, Blueprint, and Build as Task sub-agents. The Task `description` must be `01 Intake`, `02 Investigate`, `02 Blueprint`, or `03 Build` — desktop shows those titles as sub-tasks. Call TodoWrite in the parent before each Task. The sub-agent also calls TodoWrite (`merge: false` on its first call) so its own window is not empty.
 
 `--status` does not call TodoWrite and does not bootstrap.

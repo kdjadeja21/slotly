@@ -32,7 +32,7 @@ The agent you are talking to publishes a five-step todo list in **this** agent w
 
 The desktop Agents Window pins that card to the **first** prompt. The mobile app shows the session list, so the phone can show todos while desktop does not. `/ticketflow` publishes the five todos on the first prompt (`merge: false`) and stops; a project hook sends a continue prompt. Later updates use `merge: true` so desktop keeps the original card instead of creating a new one it will not paint. On desktop, if the card is still missing, scroll to the first message in the Agents Window — it is not a sticky header the way it is on mobile.
 
-Intake, Investigate, Blueprint, Build, Audit, and Ship all run in that same agent, so the list stays on the window you are watching. The thermo-nuclear review is the only nested agent. Nested runs have a different window; their TodoWrite does not fill this one.
+Intake, Investigate, Blueprint, and Build each run as a nested Task (`01 Intake`, `02 Investigate`, `02 Blueprint`, `03 Build`) so the desktop Agents Window can show those sub-tasks. The parent still publishes the five-step TodoWrite list. Audit (except the thermo-nuclear review) and Ship stay in the parent. Each nested agent also calls TodoWrite so its own window is not empty.
 
 If Ticketflow is waiting on you or blocked, the current checklist item stays in progress and the chat shows the question. `/ticketflow PROJ-123 --status` still prints the same state from `RUN.md` and does not change the checklist.
 
@@ -284,7 +284,7 @@ PRs should follow [.cursor/rules/pr-model-attribution.mdc](.cursor/rules/pr-mode
 | Pull not fast-forward | Ship stops; check `git stash list`, update base, restore work, `/tf-ship` again |
 | Thermo-nuclear unavailable | Install `cursor-team-kit`; audit treats review as fail until it runs |
 | UI skills missing | `npx skills@latest add emilkowalski/skills`; Build/Audit still run with shadcn + Tailwind fallback |
-| Agent window todo list stays empty | Desktop pins the card to the first prompt; mobile shows the session list. Later `merge: false` calls hide it on desktop. `/ticketflow` creates the list on the first prompt and auto-continues; later updates use `merge: true`. On desktop, scroll to the first message. Nested Investigate/Blueprint/Build runs hide the list. `--status` does not publish it. |
+| Agent window todo list stays empty | Desktop pins the card to the first prompt; mobile shows the session list. Later `merge: false` calls hide it on desktop. `/ticketflow` creates the list on the first prompt and auto-continues; later updates use `merge: true`. On desktop, scroll to the first message. Intake, Investigate, Blueprint, and Build run as named nested Tasks (`01 Intake`, and so on) so desktop can show those sub-tasks; their TodoWrite fills the nested window, not this one. `--status` does not publish it. |
 
 Ticketflow **will not** force-push, merge PRs, commit secrets, commit run folders, or write to Jira unless you explicitly ask.
 
