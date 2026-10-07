@@ -1,6 +1,6 @@
 ---
 name: ticketflow-shared
-description: Shared rules for every Ticketflow step. Use whenever you run /ticketflow, any /tf-* command, or any ticketflow-* skill. Defines the RUN.md schema, the resume rule, the step prerequisites, and the thresholds (confidence gate, audit pass score, audit round cap).
+description: Shared rules for every Ticketflow step. Use whenever you run /ticketflow, any /tf-* command, or any ticketflow-* skill. Defines the RUN.md schema, the resume rule, the agent-panel checklist, the step prerequisites, and the thresholds (confidence gate, audit pass score, audit round cap).
 ---
 
 # Ticketflow shared rules
@@ -33,7 +33,7 @@ To change a threshold, edit this table only.
 ## Global rules
 
 1. **Ticket key.** The ticket key is the only required input. If a command is run without one, use the most recently updated run in `.cursor/ticketflow/` (compare `updated_at` in each `RUN.md`). If there is none, ask the user for the key.
-2. **Run file.** The run file is `.cursor/ticketflow/<TICKET>/RUN.md`. Read it at the start of every step. Update it at the end of every step and after each milestone inside long steps (for example each Build task). Update it **before** moving to the next step.
+2. **Run file.** The run file is `.cursor/ticketflow/<TICKET>/RUN.md`. Read it at the start of every step. Only the parent agent writes it: at the end of every step, and when a sub-agent returns (apply that result before the next step). Sub-agents do not edit `RUN.md`. Update it **before** moving to the next step.
 3. **Ask before acting.** In Step 02, if anything is unclear, ask questions first and make no changes. Do not guess.
 4. **Evidence over assertion.** Every claim in a root cause, plan, or review cites `file:line`, test output, or a screenshot.
 5. **UI default.** If neither the ticket nor the repo specifies a UI stack, use **shadcn/ui + Tailwind CSS**. Existing repo conventions always win over this default.
@@ -53,12 +53,12 @@ type: bug | improvement | new-requirement
 status: in-progress | waiting-for-user | blocked | done
 current_step: 01-intake | 02-investigate | 02-blueprint | 03-build | 04-audit | 05-ship
 steps:
-  01-intake: pending | done
-  02-investigate: pending | done | skipped
-  02-blueprint: pending | done | skipped
+  01-intake: pending | in-progress | done
+  02-investigate: pending | in-progress | done | skipped
+  02-blueprint: pending | in-progress | done | skipped
   03-build: pending | in-progress | done
-  04-audit: pending | done
-  05-ship: pending | done
+  04-audit: pending | in-progress | done
+  05-ship: pending | in-progress | done
 confidence: <0-100, bugs only>
 audit_round: 0
 scores:
@@ -129,16 +129,43 @@ If a prerequisite is not met, do not start. Tell the user which command to run f
 
 `--from <step>` restarts from that step: set that step and every later step back to `pending` (keep `skipped` steps skipped), set `current_step`, and continue. When restarting from `build` or earlier, reset `audit_round` to 0 and clear `scores`.
 
+## Agent panel
+
+The parent agent keeps a five-item checklist in the Cursor agent panel (the todo list). This is what the user watches. `RUN.md` stays the record on disk. Do not create the checklist for `--status`.
+
+Todo ids and labels:
+
+| id | Label |
+|----|--------|
+| `intake` | 01 Intake |
+| `step02` | 02 Investigate, 02 Blueprint, or "02 Step" until Intake sets the type |
+| `build` | 03 Build |
+| `audit` | 04 Audit |
+| `ship` | 05 Ship |
+
+Map `RUN.md` step values to todo status: `done` → `completed`, `skipped` → `cancelled`, `in-progress` → `in_progress`, `pending` → `pending`. The unused Step 02 (`skipped`) is not its own todo; `step02` is only the step that will run. If that step is `skipped`, cancel `step02`.
+
+When to update:
+
+1. At the start of `/ticketflow` or any `/tf-*` command, create all five todos from the current `RUN.md`. On resume, mark finished steps `completed` immediately. If there is no `RUN.md` yet, all five are `pending` and `step02` is labeled "02 Step".
+2. Before a step starts, mark that todo `in_progress` and set that step in `RUN.md` to `in-progress` (parent write).
+3. After Intake classifies the ticket, rename `step02` to "02 Investigate" or "02 Blueprint" and cancel it if that path is `skipped`.
+4. When the step finishes, the parent writes `RUN.md`, marks the todo `completed` (or `cancelled` if `skipped`), then prints one line: `Step 03 Build complete → starting Step 04 Audit`.
+5. On `waiting-for-user` or `blocked`, leave the current todo `in_progress` and stop.
+6. A standalone `/tf-*` command marks earlier steps from `RUN.md` and sets only its own step to `in_progress`. It does not start the next step.
+
+Only one todo is `in_progress` at a time.
+
 ## Procedure
 
-Every step follows this sequence:
+Every step follows this sequence. The parent agent does this. A sub-agent does the work inside step 4 when the command says so, and returns the result. The parent applies it.
 
 1. Resolve the ticket key (Global rule 1).
 2. Read `RUN.md` and check the step's prerequisites.
-3. Set `current_step` and `status: in-progress`, and write the file.
-4. Run the step's skill.
-5. Write the step's section, the front-matter changes, and the resume hint.
-6. Only then move on.
+3. Set the agent-panel todo to `in_progress`. Set `current_step`, that step to `in-progress`, and `status: in-progress`, and write the file.
+4. Run the step. Intake, Audit (except the thermo-nuclear check), and Ship run in the parent. Investigate, Blueprint, and Build run as sub-agents. The thermo-nuclear check inside Audit runs as its own sub-agent.
+5. Write the step's section, the front-matter changes, and the resume hint. Mark the todo `completed`.
+6. Print the one-line handoff. Only then move on.
 
 ## Outputs
 
@@ -146,7 +173,7 @@ Every step follows this sequence:
 
 ## Run-file updates
 
-Every step updates: `current_step`, its own entry in `steps`, `status`, `updated_at`, its own section, and `Resume hint`.
+Every step updates: `current_step`, its own entry in `steps` (`in-progress` while running, then `done` or `skipped`), `status`, `updated_at`, its own section, and `Resume hint`. The parent agent writes these. A sub-agent returns them; it does not write the file.
 
 ## Failure handling
 

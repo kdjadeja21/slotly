@@ -57,9 +57,19 @@ Method:
 
 ### Check 3: Thermo-nuclear code quality review (pass/fail)
 
-- Explicitly invoke the `thermo-nuclear-code-quality-review` skill from the `cursor-team-kit` plugin on the branch's changes. It is manual-invoke only, so call it by name (for example through the subagent of the same name, giving it the diff and the changed files).
-- `pass` means no presumptive blockers under that skill's Approval Bar. Otherwise `fail`, with its findings.
-- If the plugin is not installed, record `thermo_nuclear: fail` with the reason "review not available", and tell the user to install `cursor-team-kit`. Do not mark it as passed.
+This check is required, and it runs only as a sub-agent. Do not score it yourself.
+
+- Launch a Task sub-agent with `subagent_type` `thermo-nuclear-code-quality-review`, description exactly `Thermo-nuclear code quality review`, and `run_in_background` false.
+- Prompt, in this shape:
+
+```text
+Full Repository Path: <absolute repo path>
+Diff: branch changes
+Custom Instructions: Review the Ticketflow change for <TICKET> against base branch <base_branch>. Return pass or fail under your Approval Bar, and the findings with file:line evidence.
+```
+
+- `pass` means no presumptive blockers under that skill's Approval Bar. Otherwise `fail`, with its findings. You write the result into `RUN.md`. The sub-agent does not.
+- If the plugin or sub-agent is not available, record `thermo_nuclear: fail` with the reason "review not available", and tell the user to install `cursor-team-kit`. Do not mark it as passed.
 
 ### Scoring discipline
 

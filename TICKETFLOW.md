@@ -26,6 +26,14 @@ That file is **not committed to git** (run folders are ignored). It records:
 
 When you run `/ticketflow PROJ-123` again, the agent reads `RUN.md`, finds the first incomplete step, and continues. You do not have to remember where you stopped.
 
+### What you see in the agent window
+
+The parent agent keeps a five-step checklist in the agent panel: Intake, Investigate or Blueprint, Build, Audit, Ship. The step that is running is marked in progress. Finished steps are marked done. A skipped path is cancelled. The chat also prints one line when a step hands off, for example `Step 03 Build complete → starting Step 04 Audit`.
+
+Investigate, Blueprint, and Build each run as their own nested agent, so those steps show up as separate runs. Audit stays in the parent, and the thermo-nuclear review is its own nested agent. Intake and Ship stay in the parent. Only the parent writes `RUN.md`.
+
+If Ticketflow is waiting on you or blocked, the current checklist item stays in progress and the chat shows the question. `/ticketflow PROJ-123 --status` still prints the same state from `RUN.md` and does not change the checklist.
+
 ### The five steps
 
 | Step | Name | Bug | Improvement / new requirement |
