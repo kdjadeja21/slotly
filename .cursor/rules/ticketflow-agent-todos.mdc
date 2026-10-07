@@ -31,6 +31,6 @@ Do not write `_bootstrap.json`. Do not stop after TodoWrite. Resume from `RUN.md
 
 Call TodoWrite with **`merge: true`** and the same five ids. Never use `merge: false` again in this parent chat.
 
-Launch Intake, Investigate, Blueprint, and Build as Task sub-agents. The Task `description` must be `01 Intake`, `02 Investigate`, `02 Blueprint`, or `03 Build` — desktop shows those titles as sub-tasks. Call TodoWrite in the parent before each Task. The sub-agent also calls TodoWrite (`merge: false` on its first call) so its own window is not empty.
+Launch Intake, Investigate, Blueprint, Build deps, and Build as Task sub-agents. The Task `description` must be `01 Intake`, `02 Investigate`, `02 Blueprint`, `03 Build deps`, or `03 Build` — desktop shows those titles as sub-tasks. Call TodoWrite in the parent before each Task. The sub-agent also calls TodoWrite (`merge: false` on its first call) so its own window is not empty.
 
 `--status` does not call TodoWrite and does not bootstrap.

@@ -27,9 +27,9 @@ Put the audited change on a correctly named branch, commit it, push it, and rais
    - Branch: `<prefix>/<TICKET>-<kebab-case-summary>`, at most about 60 characters, where the prefix is `bugfix/` for `bug`, `improvement/` for `improvement`, and `feature/` for `new-requirement`.
    - Commits: Conventional Commits with the ticket, for example `fix(PROJ-123): handle empty session redirect`.
 3. **Sync with the latest base:**
-   - The base is `base_branch` from `RUN.md`. Confirm `git branch --show-current` equals it; if not, stop and ask the user.
+   - The base is `base_branch` from `RUN.md`. Confirm `git branch --show-current` equals it; if not, stop and ask the user with the AskQuestion tool.
    - Run `git fetch --all --prune`.
-   - If the base is behind its remote: `git stash -u`, `git pull --ff-only`, `git stash pop`. If the pull is not fast-forward or the pop conflicts, **stop and ask the user**. Do not resolve it yourself.
+   - If the base is behind its remote: `git stash -u`, `git pull --ff-only`, `git stash pop`. If the pull is not fast-forward or the pop conflicts, **stop and ask the user with the AskQuestion tool**. Do not resolve it yourself.
 4. **Branch, commit, push:**
    - `git checkout -b <branch>` from the synced base.
    - Stage changes explicitly, excluding `.cursor/ticketflow/` (for example `git add -A -- . ':!.cursor/ticketflow'`). Check `git status` and `git diff --cached` for secrets (`.env*`, keys, tokens) before committing; if any are staged, unstage them and tell the user.
@@ -53,7 +53,7 @@ Never merge the PR and never enable auto-merge.
 
 ## Failure handling
 
-- Pull not fast-forward, or stash pop conflicts: stop, set `status: blocked`, explain the state (including that the stash may still hold the changes), and ask the user.
+- Pull not fast-forward, or stash pop conflicts: stop, set `status: blocked`, explain the state (including that the stash may still hold the changes), and ask the user with the AskQuestion tool.
 - Push rejected: report the error. Do not force-push.
 - `gh` not authenticated and no GitHub MCP: the branch is pushed; tell the user to run `gh auth login`, then re-run `/tf-ship <TICKET>` to raise the PR.
-- Branch name already exists on the remote: ask the user whether to reuse it or choose a new name.
+- Branch name already exists on the remote: ask the user with the AskQuestion tool whether to reuse it or choose a new name.

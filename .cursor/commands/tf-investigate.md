@@ -12,7 +12,7 @@ Ticketflow Step 02a Investigate only (bugs): read-only root-cause analysis with 
 
 `/tf-investigate <TICKET>`
 
-- `<TICKET>`: Jira key, for example `PROJ-123`. If omitted, use the most recently updated run in `.cursor/ticketflow/`; if there is none, ask.
+- `<TICKET>`: Jira key, for example `PROJ-123`. If omitted, use the most recently updated run in `.cursor/ticketflow/`; if there is none, ask with the AskQuestion tool.
 
 ## Instructions
 

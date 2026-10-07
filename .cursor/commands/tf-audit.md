@@ -12,7 +12,7 @@ Ticketflow Step 04 Audit only: score functionality and UI/UX out of 10 in this a
 
 `/tf-audit <TICKET>`
 
-- `<TICKET>`: Jira key, for example `PROJ-123`. If omitted, use the most recently updated run in `.cursor/ticketflow/`; if there is none, ask.
+- `<TICKET>`: Jira key, for example `PROJ-123`. If omitted, use the most recently updated run in `.cursor/ticketflow/`; if there is none, ask with the AskQuestion tool.
 
 ## Instructions
 

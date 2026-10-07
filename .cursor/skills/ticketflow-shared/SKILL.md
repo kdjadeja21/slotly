@@ -32,15 +32,15 @@ To change a threshold, edit this table only.
 
 ## Global rules
 
-1. **Ticket key.** The ticket key is the only required input. If a command is run without one, use the most recently updated run in `.cursor/ticketflow/` (compare `updated_at` in each `RUN.md`). If there is none, ask the user for the key.
+1. **Ticket key.** The ticket key is the only required input. If a command is run without one, use the most recently updated run in `.cursor/ticketflow/` (compare `updated_at` in each `RUN.md`). If there is none, ask the user for the key with AskQuestion.
 2. **Run file.** The run file is `.cursor/ticketflow/<TICKET>/RUN.md`. Read it at the start of every step. Write it in this agent at the end of every step, **before** moving to the next step. Do not send a nested agent to write it.
-3. **Ask before acting.** In Step 02, if anything is unclear, ask questions first and make no changes. Do not guess.
+3. **Ask before acting.** In Step 02, if anything is unclear, ask questions first and make no changes. Do not guess. **Every question to the user is asked with the Cursor AskQuestion tool** (multiple choice where the options are known), never as plain chat text. Sub-agents cannot show that UI: they write their questions under "Open questions / waiting on user" and return them, and the parent agent asks them with AskQuestion and records the answers in `RUN.md`. `waiting-for-user` stays the status while a question is open.
 4. **Evidence over assertion.** Every claim in a root cause, plan, or review cites `file:line`, test output, or a screenshot.
 5. **UI default.** If neither the ticket nor the repo specifies a UI stack, use **shadcn/ui + Tailwind CSS**. Existing repo conventions always win over this default. Build applies `../ticketflow-design-system/SKILL.md` for UI work.
 6. **Safety.** Never force-push. Never merge a PR. Never commit secrets. Never commit `.cursor/ticketflow/`. Never write to Jira unless the user explicitly asks.
 7. **Jira access.** Use the Jira/Atlassian tools already available in Cursor through the installed plugin. Discover them at runtime (for example search the dynamic tool catalog for `Atlassian` or `Jira`). If none are available, stop and tell the user.
 8. **Short summaries.** Keep each step's summary in `RUN.md` to 5 to 15 lines, factual.
-9. **Agent-window todos.** On the **first user prompt** of a new `/ticketflow` or `/tf-*` chat, call TodoWrite with the hardcoded five todos and `merge: false`, write `.cursor/ticketflow/_bootstrap.json`, and stop. The stop hook sends the continue prompt. Every later parent TodoWrite uses **`merge: true`**. Launch Intake, Investigate, Blueprint, and Build as Task sub-agents with descriptions `01 Intake`, `02 Investigate`, `02 Blueprint`, `03 Build`. The parent and the sub-agent both call TodoWrite.
+9. **Agent-window todos.** On the **first user prompt** of a new `/ticketflow` or `/tf-*` chat, call TodoWrite with the hardcoded five todos and `merge: false`, write `.cursor/ticketflow/_bootstrap.json`, and stop. The stop hook sends the continue prompt. Every later parent TodoWrite uses **`merge: true`**. Launch Intake, Investigate, Blueprint, Build deps, and Build as Task sub-agents with descriptions `01 Intake`, `02 Investigate`, `02 Blueprint`, `03 Build deps`, `03 Build`. `03 Build deps` runs first and installs shadcn/ui and skills (see `../ticketflow-build-deps/SKILL.md`); both Build sub-agents run under the `build` todo. The parent and the sub-agent both call TodoWrite.
 
 ## Run file schema
 
@@ -138,7 +138,7 @@ The desktop Agents Window pins the todo card to the **first** user prompt. The m
 
 So the first `/ticketflow` or `/tf-*` prompt in a new chat must: (1) call TodoWrite with the hardcoded five todos and `merge: false`, without reading files; (2) write `.cursor/ticketflow/_bootstrap.json`; (3) stop. The project `stop` hook then submits a continue prompt. Later prompts resume from `RUN.md`, must not bootstrap-stop, and must call TodoWrite with **`merge: true`**.
 
-Launch Intake, Investigate, Blueprint, and Build as Task sub-agents. The Task `description` is the step title (`01 Intake`, and so on) so desktop shows those sub-tasks. Call TodoWrite in the parent before each Task. The sub-agent also calls TodoWrite (`merge: false` on its first call) so its window is not empty.
+Launch Intake, Investigate, Blueprint, Build deps, and Build as Task sub-agents. The Task `description` is the step title (`01 Intake`, `03 Build deps`, and so on) so desktop shows those sub-tasks. Call TodoWrite in the parent before each Task. The sub-agent also calls TodoWrite (`merge: false` on its first call) so its window is not empty.
 
 The first call in a chat uses `merge: false` and all five todos. Every later call uses `merge: true` and the same five ids. A one-item call is rejected, and the window stays empty. Do not print the list as a substitute for the tool call.
 
@@ -172,7 +172,7 @@ Every step follows this sequence in this agent.
 1. Resolve the ticket key (Global rule 1).
 2. Read `RUN.md` and check the step's prerequisites.
 3. Call TodoWrite with that step's todo `in_progress` (all five todos, `merge: true` after the first prompt). Set `current_step`, that step to `in-progress`, and `status: in-progress`, and write the file.
-4. Run Intake, Investigate, Blueprint, and Build as Task sub-agents (description `01 Intake` / `02 Investigate` / `02 Blueprint` / `03 Build`). Call TodoWrite in this parent first. The sub-agent also calls TodoWrite. You write `RUN.md` when it returns. Audit (except thermo-nuclear) and Ship stay in this agent. The thermo-nuclear nested agent must not call TodoWrite.
+4. Run Intake, Investigate, Blueprint, Build deps, and Build as Task sub-agents (description `01 Intake` / `02 Investigate` / `02 Blueprint` / `03 Build deps` / `03 Build`; Build deps runs before Build). Call TodoWrite in this parent first. The sub-agent also calls TodoWrite. You write `RUN.md` when it returns. Audit (except thermo-nuclear) and Ship stay in this agent. The thermo-nuclear nested agent must not call TodoWrite.
 5. Write the step's section, the front-matter changes, and the resume hint. Call TodoWrite with that todo `completed`.
 6. Print the one-line handoff. Only then move on.
 

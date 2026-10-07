@@ -12,7 +12,7 @@ Ticketflow Step 02b Blueprint only (improvements and new requirements): read-onl
 
 `/tf-blueprint <TICKET>`
 
-- `<TICKET>`: Jira key, for example `PROJ-123`. If omitted, use the most recently updated run in `.cursor/ticketflow/`; if there is none, ask.
+- `<TICKET>`: Jira key, for example `PROJ-123`. If omitted, use the most recently updated run in `.cursor/ticketflow/`; if there is none, ask with the AskQuestion tool.
 
 ## Instructions
 

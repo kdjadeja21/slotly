@@ -25,7 +25,7 @@ Write a well-structured implementation plan that Build can execute task by task.
 ## Procedure
 
 1. **Read-only.** Do not edit, create, or delete any file except `RUN.md`. Do not run commands that change state.
-2. **Ask first.** List anything unclear about scope, edge cases, design, data, or dependencies. Write the questions under "Open questions / waiting on user", set `status: waiting-for-user`, and wait for the answers. Do not fill gaps with guesses. If nothing is unclear, say so and continue.
+2. **Ask first.** List anything unclear (the parent asks it with the AskQuestion tool) about scope, edge cases, design, data, or dependencies. Write the questions under "Open questions / waiting on user", set `status: waiting-for-user`, and wait for the answers. Do not fill gaps with guesses. If nothing is unclear, say so and continue.
 3. Explore the codebase to ground the plan: existing modules, patterns, design system, data layer, and tests. Cite `file:line` for every claim about existing code.
 4. Write the plan with these sections, in this order:
    1. **Goal**

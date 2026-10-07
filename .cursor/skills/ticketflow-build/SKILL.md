@@ -22,6 +22,7 @@ Implement the plan from Step 02, with tests, good performance for the project's 
 
 - The Step 02 that matches `type` is `done`. Otherwise tell the user to run `/tf-investigate <TICKET>` or `/tf-blueprint <TICKET>` first.
 - For bugs with confidence at or below `CONFIDENCE_GATE`: the user's approval is recorded in `RUN.md`. If not, stop and show the pending approval.
+- The `03 Build deps` sub-agent has run and its "Deps notes" block is in `RUN.md` (see `../ticketflow-build-deps/SKILL.md`). In fix mode, existing Deps notes are enough. If missing, tell the parent to run it first.
 
 ## Procedure
 
@@ -29,9 +30,9 @@ Implement the plan from Step 02, with tests, good performance for the project's 
 2. **Detect the stack** following section 0 of [performance.md](performance.md): language, framework and version, rendering model, data layer and caching, build tool, and platform (web, mobile, backend, CLI). Write it in the Performance notes block of `RUN.md` before writing code. Never assume React; use what the repo actually contains.
 3. **Execute the plan task by task.** After each task: tick it in `RUN.md` (`- [x]`), add a one-line note if you deviated from the plan, and write the file.
 4. **UI work:**
-   - Read and follow `../ticketflow-design-system/SKILL.md` for all UI work. It detects an existing design system or bootstraps shadcn/ui + Tailwind, and covers tokens, quality bar, and motion (CSS, Motion, GSAP). Record its design-system decision in the Build notes.
+   - Read and follow `../ticketflow-design-system/SKILL.md` for all UI work (tokens, quality bar, motion). Installing shadcn/ui, `motion`, `gsap`, and the skills is done by the `03 Build deps` sub-agent before this step; do not install them here. Use what the Deps notes say is installed. Record the design-system decision in the Build notes.
    - Follow the repo's existing UI stack. If there is none, use the shadcn/ui + Tailwind default (shared Global rule 5).
-   - Apply the `emil-design-eng` skill, and `animate` for motion work, from `emilkowalski/skills`. If those skills are not installed, say so once, suggest `npx skills@latest add emilkowalski/skills`, and continue with the shadcn + Tailwind guidance.
+   - Apply the `emil-design-eng` skill, and `animate` for motion work, from `emilkowalski/skills`. If the Deps notes say they failed to install, say so once and continue with the shadcn + Tailwind guidance.
    - Handle loading, empty, and error states, responsiveness, and accessibility (focus, contrast, labels, keyboard).
 5. **Tests:** add or update tests as the plan says. If the repo has no test setup, say so in the notes; do not add a test framework unless the plan says to.
 6. **Performance (mandatory for every change):**
@@ -68,6 +69,6 @@ Implement the plan from Step 02, with tests, good performance for the project's 
 
 ## Failure handling
 
-- A check fails and cannot be fixed within the plan's scope: leave `03-build: in-progress`, record the failure output, set `status: blocked`, and ask the user.
+- A check fails and cannot be fixed within the plan's scope: leave `03-build: in-progress`, record the failure output, set `status: blocked`, and return the question for the parent to ask with the AskQuestion tool.
 - The plan turns out to be wrong or incomplete: stop, write the gap under "Open questions / waiting on user", set `waiting-for-user`, and do not improvise new scope.
-- A dependency is needed that the plan did not list: ask before adding it.
+- A dependency is needed that is not pre-approved (shadcn/ui, `motion`, `gsap`, and the `emilkowalski/skills` skills are pre-approved for UI work) and the plan did not list: do not add it. Return the question for the parent to ask with the AskQuestion tool.
