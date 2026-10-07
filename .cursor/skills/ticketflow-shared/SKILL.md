@@ -36,7 +36,7 @@ To change a threshold, edit this table only.
 2. **Run file.** The run file is `.cursor/ticketflow/<TICKET>/RUN.md`. Read it at the start of every step. Write it in this agent at the end of every step, **before** moving to the next step. Do not send a nested agent to write it.
 3. **Ask before acting.** In Step 02, if anything is unclear, ask questions first and make no changes. Do not guess.
 4. **Evidence over assertion.** Every claim in a root cause, plan, or review cites `file:line`, test output, or a screenshot.
-5. **UI default.** If neither the ticket nor the repo specifies a UI stack, use **shadcn/ui + Tailwind CSS**. Existing repo conventions always win over this default.
+5. **UI default.** If neither the ticket nor the repo specifies a UI stack, use **shadcn/ui + Tailwind CSS**. Existing repo conventions always win over this default. Build applies `../ticketflow-design-system/SKILL.md` for UI work.
 6. **Safety.** Never force-push. Never merge a PR. Never commit secrets. Never commit `.cursor/ticketflow/`. Never write to Jira unless the user explicitly asks.
 7. **Jira access.** Use the Jira/Atlassian tools already available in Cursor through the installed plugin. Discover them at runtime (for example search the dynamic tool catalog for `Atlassian` or `Jira`). If none are available, stop and tell the user.
 8. **Short summaries.** Keep each step's summary in `RUN.md` to 5 to 15 lines, factual.

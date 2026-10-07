@@ -104,7 +104,7 @@ Set these up once:
 | **`cursor-team-kit`** plugin | Step 04 runs the thermo-nuclear code quality review |
 | **`gh auth login`** or **GitHub MCP** | Step 05 opens the PR |
 | **Dev environment** that runs (e.g. `npm run dev`) | Step 04 checks UI in the browser when possible |
-| **UI skills** (optional but recommended) | `npx skills@latest add emilkowalski/skills` — used in Build/Audit for design and motion |
+| **UI skills** (optional but recommended) | `npx skills@latest add emilkowalski/skills` — used in Build/Audit for design and motion, alongside the built-in `ticketflow-design-system` skill |
 
 **Start on the branch you want the PR to target** (often `main`). Intake records that branch in `RUN.md` as `base_branch`; Ship opens the PR against it.
 
@@ -294,7 +294,7 @@ Ticketflow **will not** force-push, merge PRs, commit secrets, commit run folder
 
 Edit thresholds once in [.cursor/skills/ticketflow-shared/SKILL.md](.cursor/skills/ticketflow-shared/SKILL.md) (`CONFIDENCE_GATE`, `AUDIT_PASS_SCORE`, `MAX_AUDIT_ROUNDS`).
 
-Default UI stack when the ticket/repo is silent: **shadcn/ui + Tailwind**; existing repo patterns always win.
+Default UI stack when the ticket/repo is silent: **shadcn/ui + Tailwind**; existing repo patterns always win. Build applies [.cursor/skills/ticketflow-design-system/SKILL.md](.cursor/skills/ticketflow-design-system/SKILL.md) (detect or bootstrap shadcn, tokens, quality bar, motion with CSS, Motion, or GSAP).
 
 Performance rules: [.cursor/skills/ticketflow-build/performance.md](.cursor/skills/ticketflow-build/performance.md) (detect stack first, universal principles, stack-specific examples, verification vs base branch).
 

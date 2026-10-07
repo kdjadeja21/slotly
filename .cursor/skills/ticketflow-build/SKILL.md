@@ -29,6 +29,7 @@ Implement the plan from Step 02, with tests, good performance for the project's 
 2. **Detect the stack** following section 0 of [performance.md](performance.md): language, framework and version, rendering model, data layer and caching, build tool, and platform (web, mobile, backend, CLI). Write it in the Performance notes block of `RUN.md` before writing code. Never assume React; use what the repo actually contains.
 3. **Execute the plan task by task.** After each task: tick it in `RUN.md` (`- [x]`), add a one-line note if you deviated from the plan, and write the file.
 4. **UI work:**
+   - Read and follow `../ticketflow-design-system/SKILL.md` for all UI work. It detects an existing design system or bootstraps shadcn/ui + Tailwind, and covers tokens, quality bar, and motion (CSS, Motion, GSAP). Record its design-system decision in the Build notes.
    - Follow the repo's existing UI stack. If there is none, use the shadcn/ui + Tailwind default (shared Global rule 5).
    - Apply the `emil-design-eng` skill, and `animate` for motion work, from `emilkowalski/skills`. If those skills are not installed, say so once, suggest `npx skills@latest add emilkowalski/skills`, and continue with the shadcn + Tailwind guidance.
    - Handle loading, empty, and error states, responsiveness, and accessibility (focus, contrast, labels, keyboard).
