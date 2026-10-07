@@ -40,7 +40,7 @@ To change a threshold, edit this table only.
 6. **Safety.** Never force-push. Never merge a PR. Never commit secrets. Never commit `.cursor/ticketflow/`. Never write to Jira unless the user explicitly asks.
 7. **Jira access.** Use the Jira/Atlassian tools already available in Cursor through the installed plugin. Discover them at runtime (for example search the dynamic tool catalog for `Atlassian` or `Jira`). If none are available, stop and tell the user.
 8. **Short summaries.** Keep each step's summary in `RUN.md` to 5 to 15 lines, factual.
-9. **Agent-window todos.** Call TodoWrite in this conversation (all five todos, `merge: false`) at the start of `/ticketflow` or `/tf-*`, before each step, and when a step finishes or waits. On the **first user prompt** of a new chat, call TodoWrite with the hardcoded five todos, write `.cursor/ticketflow/_bootstrap.json`, and stop — Cursor does not attach the todo card to the prompt that created it; the stop hook sends the continue prompt. Do not hand Investigate, Blueprint, or Build to a nested agent.
+9. **Agent-window todos.** On the **first user prompt** of a new `/ticketflow` or `/tf-*` chat, call TodoWrite with the hardcoded five todos and `merge: false`, write `.cursor/ticketflow/_bootstrap.json`, and stop. The stop hook sends the continue prompt. Every later TodoWrite uses **`merge: true`** and the same five ids — `merge: false` on a later prompt hides the card on desktop (mobile still shows it). Do not hand Investigate, Blueprint, or Build to a nested agent.
 
 ## Run file schema
 
@@ -134,11 +134,13 @@ If a prerequisite is not met, do not start. Tell the user which command to run f
 
 The todo list in the Cursor agent window is filled only by the **TodoWrite** tool in **this** conversation (the one the user has open). A checklist in chat, in a plan, or in `RUN.md` does not appear there. A nested Task agent's TodoWrite fills that nested window, not this one. Do not call TodoWrite for `--status`.
 
-Cursor does not attach the todo card to the **first** user prompt that created it. The list appears on the **next** prompt. So the first `/ticketflow` or `/tf-*` prompt in a new chat must: (1) call TodoWrite with the hardcoded five todos, without reading files; (2) write `.cursor/ticketflow/_bootstrap.json`; (3) stop. The project `stop` hook then submits a continue prompt. Later prompts resume from `RUN.md` and must not bootstrap-stop.
+The desktop Agents Window pins the todo card to the **first** user prompt. The mobile app shows the session list, so mobile can look correct while desktop is empty. `merge: false` on a later prompt creates a new list on that prompt; desktop does not paint it.
+
+So the first `/ticketflow` or `/tf-*` prompt in a new chat must: (1) call TodoWrite with the hardcoded five todos and `merge: false`, without reading files; (2) write `.cursor/ticketflow/_bootstrap.json`; (3) stop. The project `stop` hook then submits a continue prompt. Later prompts resume from `RUN.md`, must not bootstrap-stop, and must call TodoWrite with **`merge: true`**.
 
 Do not send Investigate, Blueprint, or Build to a nested agent. Those steps are long. Cursor shows the nested run, and if that agent is told not to call TodoWrite the list the user is watching stays empty.
 
-Every call sends **all five** todos and `merge: false`. A one-item call is rejected, and the window stays empty. Do not print the list as a substitute for the tool call.
+The first call in a chat uses `merge: false` and all five todos. Every later call uses `merge: true` and the same five ids. A one-item call is rejected, and the window stays empty. Do not print the list as a substitute for the tool call.
 
 | id | content |
 |----|---------|
@@ -161,7 +163,7 @@ When to call TodoWrite:
 5. On `waiting-for-user` or `blocked`, call TodoWrite with the current todo still `in_progress`, and stop.
 6. A standalone `/tf-*` command marks earlier steps from `RUN.md` and sets only its own step to `in_progress`. It does not start the next step.
 
-Only one todo is `in_progress` at a time. Resend the other four with their current statuses on every call.
+Only one todo is `in_progress` at a time. On `merge: true` calls, still send all five ids with their current statuses.
 
 ## Procedure
 
@@ -169,7 +171,7 @@ Every step follows this sequence in this agent.
 
 1. Resolve the ticket key (Global rule 1).
 2. Read `RUN.md` and check the step's prerequisites.
-3. Call TodoWrite with that step's todo `in_progress` (all five todos, `merge: false`). Set `current_step`, that step to `in-progress`, and `status: in-progress`, and write the file.
+3. Call TodoWrite with that step's todo `in_progress` (all five todos, `merge: true` after the first prompt). Set `current_step`, that step to `in-progress`, and `status: in-progress`, and write the file.
 4. Run the step in this agent and write `RUN.md` yourself. The only nested agent is the thermo-nuclear review inside Audit. Launch it only after this agent's TodoWrite list is already showing. That nested agent must not call TodoWrite.
 5. Write the step's section, the front-matter changes, and the resume hint. Call TodoWrite with that todo `completed`.
 6. Print the one-line handoff. Only then move on.

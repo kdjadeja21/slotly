@@ -38,12 +38,12 @@ On the continue prompt or any later message, do not write `_bootstrap.json` and 
 
 1. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules, run-file schema, thresholds, resume rule, and **Agent panel** section throughout.
 2. If `--status` is given: read `.cursor/ticketflow/<TICKET>/RUN.md` and print the ticket, type, status, each step's state, confidence, audit round and scores, open questions, and the resume hint. Stop.
-3. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md` if it exists; otherwise keep the hardcoded list. Then continue.
+3. Call **TodoWrite** (`merge: true`, same five ids) from `RUN.md` if it exists; otherwise keep the hardcoded list. Then continue. Do not use `merge: false` again — that hides the card on desktop.
 4. If `--from <step>` is given: apply the `--from` reset described in `ticketflow-shared`, call TodoWrite again from the reset file, then continue from that step.
 5. Otherwise create or resume the run:
    - No `RUN.md`: start at Step 01.
    - `RUN.md` exists: apply the resume rule from `ticketflow-shared`. If `status` is `waiting-for-user` or `blocked`, show what is pending, call TodoWrite with that step's todo `in_progress`, and wait.
-6. You write `RUN.md`. Before each step, call TodoWrite with that todo `in_progress` (all five, `merge: false`) and set that step to `in-progress` in `RUN.md`.
+6. You write `RUN.md`. Before each step, call TodoWrite with that todo `in_progress` (all five, `merge: true`) and set that step to `in-progress` in `RUN.md`.
 
 | Step | Where it runs | Skill |
 |------|----------------|-------|

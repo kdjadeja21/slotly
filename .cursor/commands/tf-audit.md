@@ -20,7 +20,7 @@ If this is the first user message in the conversation: call TodoWrite first (`me
 
 On a later prompt, do not bootstrap. Then:
 
-1. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md`. Set `audit` to `in_progress` and set `04-audit: in-progress` in `RUN.md`. Do this before the thermo-nuclear nested agent.
+1. Call **TodoWrite** (`merge: true`, same five ids) from `RUN.md`. Set `audit` to `in_progress` and set `04-audit: in-progress` in `RUN.md`. Do this before the thermo-nuclear nested agent. Do not use `merge: false` again — that hides the card on desktop.
 2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
 3. Prerequisites: `03-build: done`. If not, refuse and tell the user to run `/tf-build <TICKET>` first.
 4. Follow `.cursor/skills/ticketflow-audit/SKILL.md` in this agent. Check 3 must be the `thermo-nuclear-code-quality-review` nested agent, as that skill describes. You write `RUN.md`.

@@ -20,7 +20,7 @@ If this is the first user message in the conversation: call TodoWrite first (`me
 
 On a later prompt, do not bootstrap. Then:
 
-1. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md` (or all `pending` if there is no run yet). Set `intake` to `in_progress`. A markdown list does not show in the agent window.
+1. Call **TodoWrite** (`merge: true`, same five ids) from `RUN.md` (or keep the first-prompt list). Set `intake` to `in_progress`. Do not use `merge: false` again — that hides the card on desktop.
 2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
 3. Follow `.cursor/skills/ticketflow-intake/SKILL.md` in this agent. Do not launch a sub-agent.
 4. Prerequisites: none.

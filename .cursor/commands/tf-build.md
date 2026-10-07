@@ -20,7 +20,7 @@ If this is the first user message in the conversation: call TodoWrite first (`me
 
 On a later prompt, do not bootstrap. Then:
 
-1. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md`. Set `build` to `in_progress` and set `03-build: in-progress` in `RUN.md`.
+1. Call **TodoWrite** (`merge: true`, same five ids) from `RUN.md`. Set `build` to `in_progress` and set `03-build: in-progress` in `RUN.md`. Do not use `merge: false` again — that hides the card on desktop.
 2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
 3. Prerequisites: the Step 02 matching the ticket type is `done` (and, for low-confidence bugs, the user's approval is recorded). If not, refuse and tell the user to run `/tf-investigate <TICKET>` or `/tf-blueprint <TICKET>` first.
 4. Follow `.cursor/skills/ticketflow-build/SKILL.md` and `performance.md` in this agent. Write `RUN.md` yourself, including ticked tasks and Performance notes. Do not commit. Do not launch a Task sub-agent.

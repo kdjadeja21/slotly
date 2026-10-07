@@ -1,11 +1,11 @@
 ---
-description: Ticketflow todos must appear in the Cursor agent window, including on the first prompt.
+description: Ticketflow todos must appear in the Cursor agent window on desktop and mobile.
 alwaysApply: true
 ---
 
 # Ticketflow agent-window todos
 
-Cursor does not show the todo card on the **same user prompt** that first created it. It shows on the **next** prompt. Ticketflow therefore splits the first prompt.
+The desktop Agents Window anchors the todo card to the **first** user prompt and does not paint a list created with `merge: false` on a later prompt. The mobile app shows the session list, so it can look fine on the phone while desktop is empty.
 
 ## First user prompt of a new `/ticketflow` or `/tf-*` chat
 
@@ -23,10 +23,14 @@ Cursor does not show the todo card on the **same user prompt** that first create
 
 2. Write `.cursor/ticketflow/_bootstrap.json` as `{"ticket":"<TICKET>","command":"ticketflow"}` (use `tf-intake` / `tf-blueprint` / … for a step command).
 3. Reply with one line: `Ticketflow todos published for <TICKET>.`
-4. **Stop.** Do not start Intake. The project `stop` hook submits the continue prompt so the todo card can attach.
+4. **Stop.** Do not start Intake. The project `stop` hook submits the continue prompt so the desktop card can attach to that first prompt.
 
 ## Later prompts (including the auto-continue)
 
-Do not write `_bootstrap.json`. Do not stop after TodoWrite. Resume from `RUN.md`. Keep using TodoWrite in **this** agent (`merge: false`, all five todos) when a step starts, finishes, or waits. Do not send Investigate, Blueprint, or Build to a nested agent.
+Do not write `_bootstrap.json`. Do not stop after TodoWrite. Resume from `RUN.md`.
+
+Call TodoWrite with **`merge: true`** and the same five ids. Never use `merge: false` again in this chat: that replaces the list and anchors a new card to the current prompt, which desktop does not show (mobile still does). Send at least two todos per call.
+
+Do not send Investigate, Blueprint, or Build to a nested agent.
 
 `--status` does not call TodoWrite and does not bootstrap.

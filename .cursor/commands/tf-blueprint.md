@@ -20,7 +20,7 @@ If this is the first user message in the conversation: call TodoWrite first (`me
 
 On a later prompt, do not bootstrap. Then:
 
-1. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md`. Set `step02` to `in_progress` with content `02 Blueprint`, and set `02-blueprint: in-progress` in `RUN.md`.
+1. Call **TodoWrite** (`merge: true`, same five ids) from `RUN.md`. Set `step02` to `in_progress` with content `02 Blueprint`, and set `02-blueprint: in-progress` in `RUN.md`. Do not use `merge: false` again — that hides the card on desktop.
 2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
 3. Prerequisites: `RUN.md` exists, `01-intake: done`, and `type` is `improvement` or `new-requirement`. If intake is not done, refuse and tell the user to run `/tf-intake <TICKET>` first. If the type is `bug`, refuse and tell the user to run `/tf-investigate <TICKET>`.
 4. If you are not in Plan mode, tell the user once to switch (Shift+Tab).
