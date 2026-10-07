@@ -1,6 +1,6 @@
 # /tf-build
 
-Ticketflow Step 03 Build only: implement the plan task by task, with tests, performance checks, and a production build. Runs in fix mode automatically after a failed Audit. The work runs in a sub-agent. You write `RUN.md`.
+Ticketflow Step 03 Build only: implement the plan task by task, with tests, performance checks, and a production build. Runs in fix mode automatically after a failed Audit. Runs in this agent so the agent-window todo list stays visible.
 
 ## Arguments
 
@@ -10,8 +10,8 @@ Ticketflow Step 03 Build only: implement the plan task by task, with tests, perf
 
 ## Instructions
 
-1. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
-2. Prerequisites: the Step 02 matching the ticket type is `done` (and, for low-confidence bugs, the user's approval is recorded). If not, refuse and tell the user to run `/tf-investigate <TICKET>` or `/tf-blueprint <TICKET>` first.
-3. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md`. Set `build` to `in_progress` and set `03-build: in-progress` in `RUN.md`. Do this before the sub-agent.
-4. Launch a Task sub-agent (`generalPurpose`, `run_in_background` false). Prompt: follow `.cursor/skills/ticketflow-build/SKILL.md` and `performance.md` for `<TICKET>`; say when it is fix mode; return the `RUN.md` updates, including ticked tasks and Performance notes; do not edit `.cursor/ticketflow/`; do not commit; do not call TodoWrite.
-5. Write `RUN.md` from the result. Run only this step. When done, call TodoWrite with `build` `completed`, and print the check results and the next command (`/tf-audit <TICKET>`). If the result is `blocked` or `waiting-for-user`, call TodoWrite with `build` still `in_progress` and stop. Do not start the next step.
+1. Call **TodoWrite** first (`merge: false`, all five todos) from `RUN.md`. Set `build` to `in_progress` and set `03-build: in-progress` in `RUN.md`.
+2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
+3. Prerequisites: the Step 02 matching the ticket type is `done` (and, for low-confidence bugs, the user's approval is recorded). If not, refuse and tell the user to run `/tf-investigate <TICKET>` or `/tf-blueprint <TICKET>` first.
+4. Follow `.cursor/skills/ticketflow-build/SKILL.md` and `performance.md` in this agent. Write `RUN.md` yourself, including ticked tasks and Performance notes. Do not commit. Do not launch a Task sub-agent.
+5. Run only this step. When done, call TodoWrite with `build` `completed`, and print the check results and the next command (`/tf-audit <TICKET>`). If the result is `blocked` or `waiting-for-user`, call TodoWrite with `build` still `in_progress` and stop. Do not start the next step.

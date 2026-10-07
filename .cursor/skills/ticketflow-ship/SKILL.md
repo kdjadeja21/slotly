@@ -5,7 +5,7 @@ description: Ticketflow Step 05 Ship. Use when running /tf-ship, or when an audi
 
 # Ticketflow Step 05: Ship
 
-Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, resume rule, and agent-panel rules apply here. You are the parent for this step: call TodoWrite yourself.
+Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, resume rule, and agent-panel rules apply here. Run this step in this agent. Call TodoWrite yourself. Do not launch a sub-agent.
 
 ## Purpose
 

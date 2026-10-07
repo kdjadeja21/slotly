@@ -1,6 +1,6 @@
 # /tf-ship
 
-Ticketflow Step 05 Ship only: create the branch, commit, push, and raise the pull request. Runs in the parent agent.
+Ticketflow Step 05 Ship only: create the branch, commit, push, and raise the pull request. Runs in this agent.
 
 ## Arguments
 
@@ -10,8 +10,8 @@ Ticketflow Step 05 Ship only: create the branch, commit, push, and raise the pul
 
 ## Instructions
 
-1. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
-2. Prerequisites: `04-audit: done` with a passing result, or an explicit user override recorded in `RUN.md`. If not, refuse and tell the user to run `/tf-audit <TICKET>` first.
-3. Call **TodoWrite** (`merge: false`, all five todos) from `RUN.md`. Set `ship` to `in_progress` and set `05-ship: in-progress` in `RUN.md`.
+1. Call **TodoWrite** first (`merge: false`, all five todos) from `RUN.md`. Set `ship` to `in_progress` and set `05-ship: in-progress` in `RUN.md`.
+2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules and Agent panel section.
+3. Prerequisites: `04-audit: done` with a passing result, or an explicit user override recorded in `RUN.md`. If not, refuse and tell the user to run `/tf-audit <TICKET>` first.
 4. Follow `.cursor/skills/ticketflow-ship/SKILL.md` in this agent. Do not launch a sub-agent. You write `RUN.md`.
 5. Run only this step. Never force-push and never merge. When done, call TodoWrite with `ship` `completed` and print the PR link. If you stop blocked, call TodoWrite with `ship` still `in_progress`.

@@ -5,7 +5,7 @@ description: Ticketflow Step 04 Audit. Use when running /tf-audit, or when a Tic
 
 # Ticketflow Step 04: Audit
 
-Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, resume rule, and agent-panel rules apply here. You are the parent for this step: call TodoWrite yourself. The thermo-nuclear sub-agent does not.
+Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, resume rule, and agent-panel rules apply here. Run this step in this agent. Call TodoWrite yourself before launching the thermo-nuclear nested agent. That nested agent must not call TodoWrite.
 
 ## Purpose
 

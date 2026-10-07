@@ -1,6 +1,6 @@
 # /ticketflow
 
-Run the full Ticketflow workflow for a Jira ticket, from intake to a raised pull request. You are the parent agent. The user watches the agent-panel checklist, not only `RUN.md`.
+Run the full Ticketflow workflow for a Jira ticket, from intake to a raised pull request. Stay in this agent. The user watches this window's TodoWrite list.
 
 ## Arguments
 
@@ -12,25 +12,25 @@ Run the full Ticketflow workflow for a Jira ticket, from intake to a raised pull
 
 ## Instructions
 
-1. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules, run-file schema, thresholds, resume rule, and **Agent panel** section throughout.
-2. If `--status` is given: read `.cursor/ticketflow/<TICKET>/RUN.md` and print the ticket, type, status, each step's state, confidence, audit round and scores, open questions, and the resume hint. Stop.
-3. Call **TodoWrite** (`merge: false`, all five todos: `intake`, `step02`, `build`, `audit`, `ship`) from `RUN.md`, using the mapping in the Agent panel section. On a new run, all five start `pending` and `step02` content is `02 Step`. A markdown list is not this call. Do this before any sub-agent.
+1. Call **TodoWrite** first (`merge: false`, all five todos: `intake`, `step02`, `build`, `audit`, `ship`) from `RUN.md`. On a new run, all five start `pending` and `step02` content is `02 Step`. A markdown list is not this call.
+2. Read `.cursor/skills/ticketflow-shared/SKILL.md` and follow its global rules, run-file schema, thresholds, resume rule, and **Agent panel** section throughout.
+3. If `--status` is given: read `.cursor/ticketflow/<TICKET>/RUN.md` and print the ticket, type, status, each step's state, confidence, audit round and scores, open questions, and the resume hint. Stop.
 4. If `--from <step>` is given: apply the `--from` reset described in `ticketflow-shared`, call TodoWrite again from the reset file, then continue from that step.
 5. Otherwise create or resume the run:
    - No `RUN.md`: start at Step 01.
    - `RUN.md` exists: apply the resume rule from `ticketflow-shared`. If `status` is `waiting-for-user` or `blocked`, show what is pending, call TodoWrite with that step's todo `in_progress`, and wait.
-6. You write `RUN.md`. Sub-agents do not. Before each step, call TodoWrite with that todo `in_progress` (all five, `merge: false`) and set that step to `in-progress` in `RUN.md`.
+6. You write `RUN.md`. Before each step, call TodoWrite with that todo `in_progress` (all five, `merge: false`) and set that step to `in-progress` in `RUN.md`.
 
 | Step | Where it runs | Skill |
 |------|----------------|-------|
-| 01 Intake | Parent | `.cursor/skills/ticketflow-intake/SKILL.md` |
-| 02a Investigate (bug) | Sub-agent | `.cursor/skills/ticketflow-investigate/SKILL.md` |
-| 02b Blueprint (improvement, new-requirement) | Sub-agent | `.cursor/skills/ticketflow-blueprint/SKILL.md` |
-| 03 Build | Sub-agent | `.cursor/skills/ticketflow-build/SKILL.md` |
-| 04 Audit | Parent, plus the thermo-nuclear sub-agent for check 3 | `.cursor/skills/ticketflow-audit/SKILL.md` |
-| 05 Ship | Parent | `.cursor/skills/ticketflow-ship/SKILL.md` |
+| 01 Intake | This agent | `.cursor/skills/ticketflow-intake/SKILL.md` |
+| 02a Investigate (bug) | This agent | `.cursor/skills/ticketflow-investigate/SKILL.md` |
+| 02b Blueprint (improvement, new-requirement) | This agent | `.cursor/skills/ticketflow-blueprint/SKILL.md` |
+| 03 Build | This agent | `.cursor/skills/ticketflow-build/SKILL.md` |
+| 04 Audit | This agent, plus the thermo-nuclear nested agent for check 3 | `.cursor/skills/ticketflow-audit/SKILL.md` |
+| 05 Ship | This agent | `.cursor/skills/ticketflow-ship/SKILL.md` |
 
-7. **Sub-agent call** (Investigate, Blueprint, Build): use the Task tool with `subagent_type` `generalPurpose` and `run_in_background` false. The prompt must include the ticket key, the absolute path of the skill, `read-only` for Investigate and Blueprint, fix mode when Build is a re-run, and this rule: do the work, return the `RUN.md` updates, do not edit `.cursor/ticketflow/`, do not commit, do not call TodoWrite. When it returns, write `RUN.md` from that result before the next step. If it returns `waiting-for-user` or `blocked`, write that, call TodoWrite with that todo still `in_progress`, and stop.
+7. Run Investigate, Blueprint, and Build in this agent. Do not launch a Task sub-agent for them. Nested agents have a different window; their TodoWrite does not fill this one.
 8. After Intake, call TodoWrite with `step02` content `02 Investigate` or `02 Blueprint`.
 9. Routing:
    - After Intake: `bug` goes to Investigate; `improvement` or `new-requirement` goes to Blueprint.
@@ -39,5 +39,6 @@ Run the full Ticketflow workflow for a Jira ticket, from intake to a raised pull
    - After Build: Audit.
    - After Audit: pass goes to Ship; fail goes back to Build in fix mode, then Audit again, up to `MAX_AUDIT_ROUNDS` rounds, then `blocked` and ask the user. Call TodoWrite with the Build todo `pending`, then again `in_progress`, for each fix round.
 10. When a step finishes, call TodoWrite with its todo `completed` (or `cancelled` if `skipped`), then print one progress line, for example `Step 03 Build complete → starting Step 04 Audit`.
-11. Steps 02a and 02b are designed for Plan mode. If you are not in Plan mode, tell the user once to switch (Shift+Tab). The sub-agent stays read-only either way.
+11. Steps 02a and 02b are designed for Plan mode. If you are not in Plan mode, tell the user once to switch (Shift+Tab), and stay read-only in that step either way.
 12. Stop whenever a step sets `status` to `waiting-for-user` or `blocked`, call TodoWrite with that todo `in_progress`, and show the pending question or approval.
+13. The only nested agent is the thermo-nuclear review inside Audit. Call TodoWrite in this agent before launching it. That nested agent must not call TodoWrite.
