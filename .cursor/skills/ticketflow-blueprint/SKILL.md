@@ -7,7 +7,7 @@ description: Ticketflow Step 02b Blueprint, for improvements and new requirement
 
 Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, resume rule, and agent-panel rules apply here.
 
-When you are the **sub-agent** for this step: do the procedure, stay read-only, and return the `RUN.md` updates (front matter, the plan, Build checklist, resume hint, and any questions). Do not create or edit `.cursor/ticketflow/`. The parent writes that file and calls TodoWrite for the agent-window todo list. Do not call TodoWrite. If you must wait for the user, return `status: waiting-for-user` and the questions; do not continue.
+When you are the **sub-agent** for this step: call TodoWrite first (`merge: false`, the five Ticketflow todos, `step02` `in_progress` with content `02 Blueprint`). Do the procedure, stay read-only, and return the `RUN.md` updates. Do not commit. Call TodoWrite again with `merge: true` when you finish. The parent writes `RUN.md` and also calls TodoWrite.
 
 ## Purpose
 
@@ -25,7 +25,7 @@ Write a well-structured implementation plan that Build can execute task by task.
 ## Procedure
 
 1. **Read-only.** Do not edit, create, or delete any file except `RUN.md`. Do not run commands that change state.
-2. **Ask first.** List anything unclear about scope, edge cases, design, data, or dependencies. Write the questions under "Open questions / waiting on user", set `status: waiting-for-user`, and wait for the answers. Do not fill gaps with guesses. If nothing is unclear, say so and continue.
+2. **Ask first.** List anything unclear (the parent asks it with the AskQuestion tool) about scope, edge cases, design, data, or dependencies. Write the questions under "Open questions / waiting on user", set `status: waiting-for-user`, and wait for the answers. Do not fill gaps with guesses. If nothing is unclear, say so and continue.
 3. Explore the codebase to ground the plan: existing modules, patterns, design system, data layer, and tests. Cite `file:line` for every claim about existing code.
 4. Write the plan with these sections, in this order:
    1. **Goal**

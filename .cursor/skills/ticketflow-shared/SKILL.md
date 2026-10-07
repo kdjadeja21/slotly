@@ -32,14 +32,15 @@ To change a threshold, edit this table only.
 
 ## Global rules
 
-1. **Ticket key.** The ticket key is the only required input. If a command is run without one, use the most recently updated run in `.cursor/ticketflow/` (compare `updated_at` in each `RUN.md`). If there is none, ask the user for the key.
-2. **Run file.** The run file is `.cursor/ticketflow/<TICKET>/RUN.md`. Read it at the start of every step. Only the parent agent writes it: at the end of every step, and when a sub-agent returns (apply that result before the next step). Sub-agents do not edit `RUN.md`. Update it **before** moving to the next step.
-3. **Ask before acting.** In Step 02, if anything is unclear, ask questions first and make no changes. Do not guess.
+1. **Ticket key.** The ticket key is the only required input. If a command is run without one, use the most recently updated run in `.cursor/ticketflow/` (compare `updated_at` in each `RUN.md`). If there is none, ask the user for the key with AskQuestion.
+2. **Run file.** The run file is `.cursor/ticketflow/<TICKET>/RUN.md`. Read it at the start of every step. Write it in this agent at the end of every step, **before** moving to the next step. Do not send a nested agent to write it.
+3. **Ask before acting.** In Step 02, if anything is unclear, ask questions first and make no changes. Do not guess. **Every question to the user is asked with the Cursor AskQuestion tool** (multiple choice where the options are known), never as plain chat text. Sub-agents cannot show that UI: they write their questions under "Open questions / waiting on user" and return them, and the parent agent asks them with AskQuestion and records the answers in `RUN.md`. `waiting-for-user` stays the status while a question is open.
 4. **Evidence over assertion.** Every claim in a root cause, plan, or review cites `file:line`, test output, or a screenshot.
-5. **UI default.** If neither the ticket nor the repo specifies a UI stack, use **shadcn/ui + Tailwind CSS**. Existing repo conventions always win over this default.
+5. **UI default.** If neither the ticket nor the repo specifies a UI stack, use **shadcn/ui + Tailwind CSS**. Existing repo conventions always win over this default. Build applies `../ticketflow-design-system/SKILL.md` for UI work.
 6. **Safety.** Never force-push. Never merge a PR. Never commit secrets. Never commit `.cursor/ticketflow/`. Never write to Jira unless the user explicitly asks.
 7. **Jira access.** Use the Jira/Atlassian tools already available in Cursor through the installed plugin. Discover them at runtime (for example search the dynamic tool catalog for `Atlassian` or `Jira`). If none are available, stop and tell the user.
 8. **Short summaries.** Keep each step's summary in `RUN.md` to 5 to 15 lines, factual.
+9. **Agent-window todos.** On the **first user prompt** of a new `/ticketflow` or `/tf-*` chat, call TodoWrite with the hardcoded five todos and `merge: false`, write `.cursor/ticketflow/_bootstrap.json`, and stop. The stop hook sends the continue prompt. Every later parent TodoWrite uses **`merge: true`**. Launch Intake, Investigate, Blueprint, Build deps, and Build as Task sub-agents with descriptions `01 Intake`, `02 Investigate`, `02 Blueprint`, `03 Build deps`, `03 Build`. `03 Build deps` runs first and installs shadcn/ui and skills (see `../ticketflow-build-deps/SKILL.md`); both Build sub-agents run under the `build` todo. The parent and the sub-agent both call TodoWrite.
 
 ## Run file schema
 
@@ -131,9 +132,15 @@ If a prerequisite is not met, do not start. Tell the user which command to run f
 
 ## Agent panel
 
-The todo list in the Cursor agent window is filled only by the **TodoWrite** tool. A checklist in chat, in a plan, or in `RUN.md` does not appear there. The parent agent calls TodoWrite. Sub-agents do not: a nested agent's call never shows in the parent window, which is the one the user is watching. Do not call TodoWrite for `--status`.
+The todo list in the Cursor agent window is filled only by the **TodoWrite** tool in **this** conversation (the one the user has open). A checklist in chat, in a plan, or in `RUN.md` does not appear there. A nested Task agent's TodoWrite fills that nested window, not this one. Do not call TodoWrite for `--status`.
 
-Every call sends **all five** todos and `merge: false`. A one-item call is rejected, and the window stays empty. Do not print the list as a substitute for the tool call.
+The desktop Agents Window pins the todo card to the **first** user prompt. The mobile app shows the session list, so mobile can look correct while desktop is empty. `merge: false` on a later prompt creates a new list on that prompt; desktop does not paint it.
+
+So the first `/ticketflow` or `/tf-*` prompt in a new chat must: (1) call TodoWrite with the hardcoded five todos and `merge: false`, without reading files; (2) write `.cursor/ticketflow/_bootstrap.json`; (3) stop. The project `stop` hook then submits a continue prompt. Later prompts resume from `RUN.md`, must not bootstrap-stop, and must call TodoWrite with **`merge: true`**.
+
+Launch Intake, Investigate, Blueprint, Build deps, and Build as Task sub-agents. The Task `description` is the step title (`01 Intake`, `03 Build deps`, and so on) so desktop shows those sub-tasks. Call TodoWrite in the parent before each Task. The sub-agent also calls TodoWrite (`merge: false` on its first call) so its window is not empty.
+
+The first call in a chat uses `merge: false` and all five todos. Every later call uses `merge: true` and the same five ids. A one-item call is rejected, and the window stays empty. Do not print the list as a substitute for the tool call.
 
 | id | content |
 |----|---------|
@@ -147,25 +154,25 @@ Each todo has `id`, `content`, and `status`. `status` is `pending`, `in_progress
 
 Map `RUN.md` step values to todo status: `done` → `completed`, `skipped` → `cancelled`, `in-progress` → `in_progress`, `pending` → `pending`. The unused Step 02 (`skipped`) is not its own todo; `step02` is only the step that will run. If that step is `skipped`, cancel `step02`.
 
-When to call TodoWrite (parent only):
+When to call TodoWrite:
 
-1. At the start of `/ticketflow` or any `/tf-*` command, after reading `RUN.md` and before any sub-agent. On resume, finished steps are already `completed`. If there is no `RUN.md` yet, all five are `pending` and `step02` content is `02 Step`.
-2. Before a step starts, call it again with that todo `in_progress`, and set that step in `RUN.md` to `in-progress` (parent write).
+1. On the first user prompt of a new `/ticketflow` or `/tf-*` chat: hardcoded five todos, then bootstrap-stop (see above). On later prompts: after reading `RUN.md` if it exists. On resume, finished steps are already `completed`. If there is no `RUN.md` yet, all five are `pending` and `step02` content is `02 Step`.
+2. Before a step starts, call it again with that todo `in_progress`, and set that step in `RUN.md` to `in-progress`.
 3. After Intake classifies the ticket, call it again with `step02` content `02 Investigate` or `02 Blueprint`, and `cancelled` if that path is `skipped`.
-4. When the step finishes, the parent writes `RUN.md`, calls TodoWrite with that todo `completed` (or `cancelled` if `skipped`), then prints one line: `Step 03 Build complete → starting Step 04 Audit`.
+4. When the step finishes, write `RUN.md`, call TodoWrite with that todo `completed` (or `cancelled` if `skipped`), then print one line: `Step 03 Build complete → starting Step 04 Audit`.
 5. On `waiting-for-user` or `blocked`, call TodoWrite with the current todo still `in_progress`, and stop.
 6. A standalone `/tf-*` command marks earlier steps from `RUN.md` and sets only its own step to `in_progress`. It does not start the next step.
 
-Only one todo is `in_progress` at a time. Resend the other four with their current statuses on every call.
+Only one todo is `in_progress` at a time. On `merge: true` calls, still send all five ids with their current statuses.
 
 ## Procedure
 
-Every step follows this sequence. The parent agent does this. A sub-agent does the work inside step 4 when the command says so, and returns the result. The parent applies it.
+Every step follows this sequence in this agent.
 
 1. Resolve the ticket key (Global rule 1).
 2. Read `RUN.md` and check the step's prerequisites.
-3. Call TodoWrite with that step's todo `in_progress` (all five todos, `merge: false`). Set `current_step`, that step to `in-progress`, and `status: in-progress`, and write the file.
-4. Run the step. Intake, Audit (except the thermo-nuclear check), and Ship run in the parent. Investigate, Blueprint, and Build run as sub-agents. The thermo-nuclear check inside Audit runs as its own sub-agent. Sub-agents do not call TodoWrite.
+3. Call TodoWrite with that step's todo `in_progress` (all five todos, `merge: true` after the first prompt). Set `current_step`, that step to `in-progress`, and `status: in-progress`, and write the file.
+4. Run Intake, Investigate, Blueprint, Build deps, and Build as Task sub-agents (description `01 Intake` / `02 Investigate` / `02 Blueprint` / `03 Build deps` / `03 Build`; Build deps runs before Build). Call TodoWrite in this parent first. The sub-agent also calls TodoWrite. You write `RUN.md` when it returns. Audit (except thermo-nuclear) and Ship stay in this agent. The thermo-nuclear nested agent must not call TodoWrite.
 5. Write the step's section, the front-matter changes, and the resume hint. Call TodoWrite with that todo `completed`.
 6. Print the one-line handoff. Only then move on.
 
@@ -175,7 +182,7 @@ Every step follows this sequence. The parent agent does this. A sub-agent does t
 
 ## Run-file updates
 
-Every step updates: `current_step`, its own entry in `steps` (`in-progress` while running, then `done` or `skipped`), `status`, `updated_at`, its own section, and `Resume hint`. The parent agent writes these. A sub-agent returns them; it does not write the file.
+Every step updates: `current_step`, its own entry in `steps` (`in-progress` while running, then `done` or `skipped`), `status`, `updated_at`, its own section, and `Resume hint`. This agent writes these.
 
 ## Failure handling
 

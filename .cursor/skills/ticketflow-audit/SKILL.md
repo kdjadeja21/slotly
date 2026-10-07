@@ -5,7 +5,7 @@ description: Ticketflow Step 04 Audit. Use when running /tf-audit, or when a Tic
 
 # Ticketflow Step 04: Audit
 
-Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, resume rule, and agent-panel rules apply here. You are the parent for this step: call TodoWrite yourself. The thermo-nuclear sub-agent does not.
+Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, thresholds, resume rule, and agent-panel rules apply here. Run this step in this agent. Call TodoWrite yourself before launching the thermo-nuclear nested agent. That nested agent must not call TodoWrite.
 
 ## Purpose
 
@@ -18,7 +18,7 @@ Review the change against the base branch with three independent checks, decide 
 ## Prerequisites
 
 - `steps.03-build: done`. Otherwise tell the user to run `/tf-build <TICKET>` first.
-- If `audit_round` already equals `MAX_AUDIT_ROUNDS` and the last round failed, do not start another round. Set `status: blocked` and ask the user (see Failure handling).
+- If `audit_round` already equals `MAX_AUDIT_ROUNDS` and the last round failed, do not start another round. Set `status: blocked` and ask the user with the AskQuestion tool (see Failure handling).
 
 ## Procedure
 
@@ -85,7 +85,7 @@ Using thresholds from `ticketflow-shared`:
 
 4. **Pass:** record scores, mark the step done, clear "Open findings", and proceed to Step 05.
 5. **Fail:** write a prioritized "Open findings" list (highest impact first; each item has the check it came from, evidence, and the expected fix), set `steps.03-build: pending` and `steps.04-audit: pending`, and re-run Step 03 in fix mode, then Audit again.
-6. **Round cap:** if the round that just failed is round `MAX_AUDIT_ROUNDS`, do not loop again. Set `status: blocked`, summarize what is left, and ask the user how to proceed.
+6. **Round cap:** if the round that just failed is round `MAX_AUDIT_ROUNDS`, do not loop again. Set `status: blocked`, summarize what is left, and ask the user with the AskQuestion tool how to proceed.
 
 ## Outputs
 

@@ -42,3 +42,4 @@ next-env.d.ts
 
 # ticketflow runs
 .cursor/ticketflow/*/
+.cursor/ticketflow/_bootstrap.json

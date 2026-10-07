@@ -1,0 +1,36 @@
+---
+description: Ticketflow todos must appear in the Cursor agent window on desktop and mobile.
+alwaysApply: true
+---
+
+# Ticketflow agent-window todos
+
+The desktop Agents Window anchors the todo card to the **first** user prompt and does not paint a list created with `merge: false` on a later prompt. The mobile app shows the session list, so it can look fine on the phone while desktop is empty.
+
+## First user prompt of a new `/ticketflow` or `/tf-*` chat
+
+(No prior user message in this conversation. Not `--status`.)
+
+1. Your **first tool call** is TodoWrite. Do not read files, do not discover tools for Jira, do not start Intake. Hardcoded payload, `merge: false`:
+
+| id | content | status |
+|----|---------|--------|
+| `intake` | `01 Intake` | `in_progress` |
+| `step02` | `02 Step` | `pending` |
+| `build` | `03 Build` | `pending` |
+| `audit` | `04 Audit` | `pending` |
+| `ship` | `05 Ship` | `pending` |
+
+2. Write `.cursor/ticketflow/_bootstrap.json` as `{"ticket":"<TICKET>","command":"ticketflow"}` (use `tf-intake` / `tf-blueprint` / … for a step command).
+3. Reply with one line: `Ticketflow todos published for <TICKET>.`
+4. **Stop.** Do not start Intake. The project `stop` hook submits the continue prompt so the desktop card can attach to that first prompt.
+
+## Later prompts (including the auto-continue)
+
+Do not write `_bootstrap.json`. Do not stop after TodoWrite. Resume from `RUN.md`.
+
+Call TodoWrite with **`merge: true`** and the same five ids. Never use `merge: false` again in this parent chat.
+
+Launch Intake, Investigate, Blueprint, Build deps, and Build as Task sub-agents. The Task `description` must be `01 Intake`, `02 Investigate`, `02 Blueprint`, `03 Build deps`, or `03 Build` — desktop shows those titles as sub-tasks. Call TodoWrite in the parent before each Task. The sub-agent also calls TodoWrite (`merge: false` on its first call) so its own window is not empty.
+
+`--status` does not call TodoWrite and does not bootstrap.

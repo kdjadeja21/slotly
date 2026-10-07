@@ -28,9 +28,11 @@ When you run `/ticketflow PROJ-123` again, the agent reads `RUN.md`, finds the f
 
 ### What you see in the agent window
 
-The parent agent publishes a five-step todo list in the agent window: Intake, Investigate or Blueprint, Build, Audit, Ship. The step that is running is marked in progress. Finished steps are marked done. A skipped path is cancelled. Text in the chat is not that list. The chat also prints one line when a step hands off, for example `Step 03 Build complete → starting Step 04 Audit`.
+The agent you are talking to publishes a five-step todo list in **this** agent window with the TodoWrite tool: Intake, Investigate or Blueprint, Build, Audit, Ship. The step that is running is marked in progress. Finished steps are marked done. A skipped path is cancelled. Text in the chat is not that list. The chat also prints one line when a step hands off, for example `Step 03 Build complete → starting Step 04 Audit`.
 
-Investigate, Blueprint, and Build each run as their own nested agent, so those steps show up as separate runs. Audit stays in the parent, and the thermo-nuclear review is its own nested agent. Intake and Ship stay in the parent. Only the parent writes `RUN.md`.
+The desktop Agents Window pins that card to the **first** prompt. The mobile app shows the session list, so the phone can show todos while desktop does not. `/ticketflow` publishes the five todos on the first prompt (`merge: false`) and stops; a project hook sends a continue prompt. Later updates use `merge: true` so desktop keeps the original card instead of creating a new one it will not paint. On desktop, if the card is still missing, scroll to the first message in the Agents Window — it is not a sticky header the way it is on mobile.
+
+Intake, Investigate, Blueprint, Build deps, and Build each run as a nested Task (`01 Intake`, `02 Investigate`, `02 Blueprint`, `03 Build deps`, `03 Build`) so the desktop Agents Window can show those sub-tasks. The parent still publishes the five-step TodoWrite list. Audit (except the thermo-nuclear review) and Ship stay in the parent. Each nested agent also calls TodoWrite so its own window is not empty.
 
 If Ticketflow is waiting on you or blocked, the current checklist item stays in progress and the chat shows the question. `/ticketflow PROJ-123 --status` still prints the same state from `RUN.md` and does not change the checklist.
 
@@ -74,6 +76,8 @@ flowchart TB
   audit -->|still failing| blocked[Blocked — you decide]
 ```
 
+**Questions:** every question Ticketflow asks you uses Cursor's native question UI (the AskQuestion tool), not plain chat text. Nested sub-agents return their questions and the parent agent asks them.
+
 **Gates (where Ticketflow stops for you):**
 
 - **Intake:** ticket too vague to classify → questions, then wait.
@@ -102,7 +106,7 @@ Set these up once:
 | **`cursor-team-kit`** plugin | Step 04 runs the thermo-nuclear code quality review |
 | **`gh auth login`** or **GitHub MCP** | Step 05 opens the PR |
 | **Dev environment** that runs (e.g. `npm run dev`) | Step 04 checks UI in the browser when possible |
-| **UI skills** (optional but recommended) | `npx skills@latest add emilkowalski/skills` — used in Build/Audit for design and motion |
+| **UI skills** (installed automatically) | `03 Build deps` runs `npx skills@latest add emilkowalski/skills` for UI tickets; used in Build/Audit alongside the built-in `ticketflow-design-system` skill |
 
 **Start on the branch you want the PR to target** (often `main`). Intake records that branch in `RUN.md` as `base_branch`; Ship opens the PR against it.
 
@@ -199,6 +203,7 @@ Each step command **refuses** to run if the previous required step isn’t done 
 
 ### 03 — Build
 
+- A separate **`03 Build deps`** sub-agent runs first. For tickets with UI work it installs shadcn/ui (`init` + only the components the plan needs), `motion`/`gsap` when the plan needs them, and the `emilkowalski/skills` skills, then records **Deps notes** in `RUN.md`. These installs are pre-approved; any other new dependency is asked about first.
 - Executes the checklist; ticks tasks in `RUN.md`.
 - Detects **your project’s stack** (not assumed React); applies [.cursor/skills/ticketflow-build/performance.md](.cursor/skills/ticketflow-build/performance.md).
 - UI: loading, empty, error states, a11y, responsive layout when there is UI.
@@ -282,7 +287,7 @@ PRs should follow [.cursor/rules/pr-model-attribution.mdc](.cursor/rules/pr-mode
 | Pull not fast-forward | Ship stops; check `git stash list`, update base, restore work, `/tf-ship` again |
 | Thermo-nuclear unavailable | Install `cursor-team-kit`; audit treats review as fail until it runs |
 | UI skills missing | `npx skills@latest add emilkowalski/skills`; Build/Audit still run with shadcn + Tailwind fallback |
-| Agent window todo list stays empty | Re-run the command. Only the parent agent can publish that list, and it must do so before a nested agent starts. `--status` does not publish it. A checklist written only in the chat never shows there. |
+| Agent window todo list stays empty | Desktop pins the card to the first prompt; mobile shows the session list. Later `merge: false` calls hide it on desktop. `/ticketflow` creates the list on the first prompt and auto-continues; later updates use `merge: true`. On desktop, scroll to the first message. Intake, Investigate, Blueprint, and Build run as named nested Tasks (`01 Intake`, and so on) so desktop can show those sub-tasks; their TodoWrite fills the nested window, not this one. `--status` does not publish it. |
 
 Ticketflow **will not** force-push, merge PRs, commit secrets, commit run folders, or write to Jira unless you explicitly ask.
 
@@ -292,7 +297,7 @@ Ticketflow **will not** force-push, merge PRs, commit secrets, commit run folder
 
 Edit thresholds once in [.cursor/skills/ticketflow-shared/SKILL.md](.cursor/skills/ticketflow-shared/SKILL.md) (`CONFIDENCE_GATE`, `AUDIT_PASS_SCORE`, `MAX_AUDIT_ROUNDS`).
 
-Default UI stack when the ticket/repo is silent: **shadcn/ui + Tailwind**; existing repo patterns always win.
+Default UI stack when the ticket/repo is silent: **shadcn/ui + Tailwind**; existing repo patterns always win. Build applies [.cursor/skills/ticketflow-design-system/SKILL.md](.cursor/skills/ticketflow-design-system/SKILL.md) (detect or bootstrap shadcn, tokens, quality bar, motion with CSS, Motion, or GSAP).
 
 Performance rules: [.cursor/skills/ticketflow-build/performance.md](.cursor/skills/ticketflow-build/performance.md) (detect stack first, universal principles, stack-specific examples, verification vs base branch).
 
