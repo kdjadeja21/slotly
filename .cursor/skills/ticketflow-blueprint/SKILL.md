@@ -5,7 +5,9 @@ description: Ticketflow Step 02b Blueprint, for improvements and new requirement
 
 # Ticketflow Step 02b: Blueprint (improvements and new requirements)
 
-Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, and resume rule apply here.
+Read `../ticketflow-shared/SKILL.md` first. Its global rules, run-file schema, resume rule, and agent-panel rules apply here.
+
+When you are the **sub-agent** for this step: do the procedure, stay read-only, and return the `RUN.md` updates (front matter, the plan, Build checklist, resume hint, and any questions). Do not create or edit `.cursor/ticketflow/`. The parent writes that file and the agent-panel checklist. If you must wait for the user, return `status: waiting-for-user` and the questions; do not continue.
 
 ## Purpose
 
