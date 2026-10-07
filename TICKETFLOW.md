@@ -1,219 +1,308 @@
-# Ticketflow
+# Ticketflow — user guide
 
-## 1. What is Ticketflow
+Ticketflow is a Cursor workflow for working Jira tickets end to end: one command fetches the ticket, plans or investigates, implements the change, reviews it with scores, and opens a pull request. You can run the whole pipeline at once or run any step on its own, and if something stops mid-way you pick up where you left off.
 
-Ticketflow is a Cursor workflow that takes a Jira ticket from intake to a raised pull request with one command. It classifies the ticket, investigates or plans, builds, audits the result with scores, and ships a branch and PR, recording every step in a resumable run file.
+This guide explains **how Ticketflow works**, **how to use it**, and **what to do when something goes wrong**. The agent logic lives under `.cursor/commands/` and `.cursor/skills/`; you normally only need this file and the commands below.
 
-## 2. Flow diagram
+---
 
-```mermaid
-flowchart LR
-  intake[01 Intake] -->|bug| investigate[02a Investigate]
-  intake -->|"improvement / new requirement"| blueprint[02b Blueprint]
-  investigate -->|"confidence above 70"| build[03 Build]
-  investigate -->|"confidence 70 or below"| waitUser[Wait for user]
-  waitUser --> build
-  blueprint --> build
-  build --> audit[04 Audit]
-  audit -->|pass| ship[05 Ship]
-  audit -->|"fail, max 3 rounds"| build
-  audit -->|"still failing after round 3"| askUser[Blocked: ask user]
+## How Ticketflow works
+
+### The big picture
+
+Every ticket gets a **run**. A run is a folder on disk that holds state and notes:
+
+```text
+.cursor/ticketflow/<TICKET>/RUN.md
 ```
 
-## 3. Prerequisites
+That file is **not committed to git** (run folders are ignored). It records:
 
-| Requirement | Why | How to set it up |
-|-------------|-----|------------------|
-| Jira/Atlassian plugin, authenticated | Intake reads the ticket | Install the Atlassian plugin in Cursor and sign in when prompted |
-| `cursor-team-kit` plugin | Audit runs `thermo-nuclear-code-quality-review` | Install `cursor-team-kit` from the Cursor plugin marketplace |
-| UI skills from `emilkowalski/skills` | Build and Audit use `emil-design-eng`, `animate`, `break-ui`, `review-animations` | `npx skills@latest add emilkowalski/skills` |
-| `git` and GitHub CLI, or the GitHub MCP | Ship pushes and raises the PR | `gh auth login` |
-| A runnable dev environment | Audit verifies the change live | Make sure the repo's dev server starts (for example `npm run dev`) |
+- Ticket type: **bug**, **improvement**, or **new requirement**
+- Which steps are done, in progress, or skipped
+- Summaries from each step (intake, plan or root cause, build tasks, audit scores, PR link)
+- **Open questions** when Ticketflow needs you
+- A one-line **resume hint** telling the agent what to do next
 
-## 4. Quick start
+When you run `/ticketflow PROJ-123` again, the agent reads `RUN.md`, finds the first incomplete step, and continues. You do not have to remember where you stopped.
+
+### The five steps
+
+| Step | Name | Bug | Improvement / new requirement |
+|------|------|-----|--------------------------------|
+| 01 | **Intake** | Fetch Jira, classify, create `RUN.md` | Same |
+| 02 | **Investigate** or **Blueprint** | Root cause + confidence + fix plan (read-only) | Implementation plan (read-only) |
+| 03 | **Build** | Implement tasks, tests, performance checks, lint/build | Same |
+| 04 | **Audit** | Score functionality & UI/UX, code-quality review | Same |
+| 05 | **Ship** | Branch, commit, push, open PR | Same |
+
+```mermaid
+flowchart TB
+  subgraph step01 [Step 01 Intake]
+    intake[Intake from Jira]
+  end
+  subgraph step02 [Step 02 Plan or diagnose]
+    investigate[Investigate bugs]
+    blueprint[Blueprint features]
+  end
+  subgraph step03 [Step 03 Build]
+    build[Implement and verify]
+  end
+  subgraph step04 [Step 04 Audit]
+    audit[Score and review]
+  end
+  subgraph step05 [Step 05 Ship]
+    ship[Branch and PR]
+  end
+  intake -->|bug| investigate
+  intake -->|improvement or new requirement| blueprint
+  investigate -->|confidence above 70| build
+  investigate -->|confidence 70 or below| waitUser[You approve the fix plan]
+  waitUser --> build
+  blueprint --> build
+  build --> audit
+  audit -->|pass| ship
+  audit -->|fail up to 3 times| build
+  audit -->|still failing| blocked[Blocked — you decide]
+```
+
+**Gates (where Ticketflow stops for you):**
+
+- **Intake:** ticket too vague to classify → questions, then wait.
+- **Investigate (bugs):** confidence **70 or below** → shows findings, waits for your OK before Build.
+- **Investigate / Blueprint:** missing repro, scope, or design → questions first, no guessing.
+- **Audit:** scores or code review fail → Build again in **fix mode** (only audit findings), then Audit again (max **3** rounds). Still failing → **blocked**, you choose next move.
+- **Ship:** cannot fast-forward the base branch → stops; you fix git state, then run Ship again.
+
+Default thresholds (change only in [.cursor/skills/ticketflow-shared/SKILL.md](.cursor/skills/ticketflow-shared/SKILL.md)):
+
+| Setting | Default | Meaning |
+|---------|---------|---------|
+| `CONFIDENCE_GATE` | 70 | Bug root-cause confidence must be **above** 70 to auto-enter Build |
+| `AUDIT_PASS_SCORE` | 8 | Functionality and UI/UX need **≥ 8** (UI/UX can be `n/a` if no UI) |
+| `MAX_AUDIT_ROUNDS` | 3 | Audit → Build fix loops, then blocked |
+
+---
+
+## Before you start
+
+Set these up once:
+
+| You need | Why |
+|----------|-----|
+| **Jira / Atlassian** plugin in Cursor, signed in | Step 01 reads the ticket (read-only; Ticketflow does not update Jira unless you ask) |
+| **`cursor-team-kit`** plugin | Step 04 runs the thermo-nuclear code quality review |
+| **`gh auth login`** or **GitHub MCP** | Step 05 opens the PR |
+| **Dev environment** that runs (e.g. `npm run dev`) | Step 04 checks UI in the browser when possible |
+| **UI skills** (optional but recommended) | `npx skills@latest add emilkowalski/skills` — used in Build/Audit for design and motion |
+
+**Start on the branch you want the PR to target** (often `main`). Intake records that branch in `RUN.md` as `base_branch`; Ship opens the PR against it.
+
+**For bug diagnosis and feature planning (Step 02), use Cursor Plan mode** (Shift+Tab). Commands cannot switch modes for you; Step 02 stays read-only either way (no code changes except updating `RUN.md`).
+
+---
+
+## How to use Ticketflow
+
+### Full run (most common)
+
+In Cursor chat (Agent mode), at the repo root:
 
 ```text
 /ticketflow PROJ-123
 ```
 
-You will see:
+Replace `PROJ-123` with your Jira key (e.g. `SLOTLY-42`).
 
-1. The ticket summary and its classification, with a one-sentence reason.
-2. Questions, if anything is unclear. Ticketflow waits for your answers.
-3. A root cause with a confidence score (bugs) or an implementation plan (everything else).
-4. Build progress, with each task ticked off, followed by check results and performance notes.
-5. Audit scores for functionality, UI/UX, and code quality.
-6. A one-line progress update between steps, for example `Step 03 Build complete → starting Step 04 Audit`.
-7. The link to the raised pull request.
+What happens:
 
-## 5. Commands
+1. **Intake** — Summary, acceptance criteria, type (`bug` / `improvement` / `new-requirement`), reason in one sentence.
+2. **Step 02** — For bugs: questions if needed, then root cause with `file:line` evidence, confidence **out of 100**, and a fix plan. For features: an implementation plan with tasks and an AC → task table.
+3. **Build** — Tasks ticked off in `RUN.md`, lint/typecheck/tests and production build when the repo supports them, performance notes for your stack.
+4. **Audit** — Functionality **0–10**, UI/UX **0–10** (or `n/a`), thermo-nuclear **pass/fail**; screenshots for UI when possible.
+5. **Ship** — Branch name follows **this repo’s** rules if they exist (e.g. `.cursor/rules/branching.mdc`), else Ticketflow defaults; commit, push, PR link.
 
-| Command | Step | What it does | When to run it alone |
-|---------|------|--------------|----------------------|
-| `/ticketflow <TICKET>` | All | Creates or resumes the run and executes every step in order | The normal way to work a ticket |
-| `/ticketflow <TICKET> --status` | None | Prints the run summary and resume hint; does no work | To check where a run is |
-| `/ticketflow <TICKET> --from <step>` | Any | Restarts from `intake`, `investigate`, `blueprint`, `build`, `audit`, or `ship` | To redo a step after changing your mind |
-| `/tf-intake <TICKET>` | 01 Intake | Fetches and classifies the ticket, creates `RUN.md` | To triage a ticket without starting work |
-| `/tf-investigate <TICKET>` | 02a Investigate | Read-only root-cause analysis with a confidence score | To diagnose a bug without fixing it yet |
-| `/tf-blueprint <TICKET>` | 02b Blueprint | Read-only implementation plan | To get a plan reviewed before building |
-| `/tf-build <TICKET>` | 03 Build | Implements the plan, runs checks and a production build | After editing the plan by hand, or to apply audit findings |
-| `/tf-audit <TICKET>` | 04 Audit | Scores the change and runs the code quality review | After making manual changes you want re-scored |
-| `/tf-ship <TICKET>` | 05 Ship | Creates the branch, commits, pushes, raises the PR | When you have reviewed the work and want the PR |
+Between steps you’ll see a short line like: `Step 03 Build complete → starting Step 04 Audit`.
 
-Each `/tf-*` command refuses to start if its prerequisite step is not done, and tells you which command to run first.
+### Check status without doing work
 
-## 6. Step-by-step walkthrough
+```text
+/ticketflow PROJ-123 --status
+```
 
-### Step 01: Intake
+Shows step states, scores, open questions, and the **resume hint**.
 
-- **Input:** the ticket key.
-- **Does:** fetches the summary, description, acceptance criteria, comments, attachments, linked issues, priority, labels, reporter, and assignee; classifies the ticket as `bug`, `improvement`, or `new-requirement`.
-- **Output:** `RUN.md` with the Intake section and the base branch recorded.
-- **Gate:** if the ticket is too thin to classify, Ticketflow asks you first.
+### Resume after a break or failure
 
-### Step 02a: Investigate (bugs)
+```text
+/ticketflow PROJ-123
+```
 
-- **Input:** the Intake section.
-- **Does:** asks any questions first, then traces the failing path, checks `git log` and `git blame` on suspect files, and reads existing tests. Read-only.
-- **Output:** root cause with `file:line` evidence, a confidence score out of 100, rejected alternatives, and a fix plan.
-- **Gate:** confidence above the threshold (default 70) proceeds automatically; otherwise Ticketflow waits for your approval.
+Same command. If status is `waiting-for-user`, answer the question in chat, then run it again. If you were mid-Build, the agent continues from the first unchecked task in `RUN.md`.
 
-### Step 02b: Blueprint (improvements and new requirements)
+### Restart from a specific step
 
-- **Input:** the Intake section.
-- **Does:** asks any questions first, then writes a plan: Goal, Scope, Out of scope, Affected files and modules, Data/API changes, UI spec, Ordered implementation tasks, Test plan, Risks and mitigations, and an Acceptance-criteria → task mapping. Read-only.
-- **Output:** the plan in `RUN.md`.
-- **Gate:** proceeds once every question is answered and the plan is complete.
+```text
+/ticketflow PROJ-123 --from build
+```
 
-### Step 03: Build
+Allowed values: `intake`, `investigate`, `blueprint`, `build`, `audit`, `ship`. That step and later ones reset to pending (skipped steps stay skipped).
 
-- **Input:** the task checklist from Step 02, or the open findings from a failed Audit (fix mode).
-- **Does:** detects the stack, implements tasks one at a time (ticking each in `RUN.md`), adds tests, applies the performance checklist, runs lint, typecheck, tests, and a production build, and compares against the base branch. Does not commit.
-- **Output:** working tree changes and a Performance notes block.
-- **Gate:** checks must pass.
+### Run one step only
 
-### Step 04: Audit
+Use when you want control (review the plan before Build, re-audit after manual edits, etc.):
 
-- **Input:** the diff against the base branch.
-- **Does:** scores functionality and UI/UX out of 10, verifies live with the browser tool where possible, and runs the thermo-nuclear code quality review.
-- **Output:** a row in the Audit table and, on failure, a prioritized list of open findings.
-- **Gate:** see [Audit scoring](#8-audit-scoring).
+| Command | When to use it |
+|---------|----------------|
+| `/tf-intake PROJ-123` | Triage only; creates `RUN.md` |
+| `/tf-investigate PROJ-123` | Bug root-cause only (Plan mode recommended) |
+| `/tf-blueprint PROJ-123` | Feature plan only (Plan mode recommended) |
+| `/tf-build PROJ-123` | Implement after you approved the plan, or after failed audit |
+| `/tf-audit PROJ-123` | Re-score after changes |
+| `/tf-ship PROJ-123` | Open PR after audit passed (or you explicitly override in `RUN.md`) |
 
-### Step 05: Ship
+If you omit the ticket key, Ticketflow uses the **most recently updated** run under `.cursor/ticketflow/`.
 
-- **Input:** a passed audit (or your explicit override).
-- **Does:** discovers the branching rules, syncs the base branch, creates the branch, commits, pushes, and raises the PR.
-- **Output:** the PR link, recorded in `RUN.md`.
-- **Gate:** stops and asks if the base cannot be fast-forwarded or the stash does not apply cleanly.
+Each step command **refuses** to run if the previous required step isn’t done and tells you which command to run first.
 
-## 7. Run file and resuming
+---
 
-Every run lives in `.cursor/ticketflow/<TICKET>/RUN.md`. It holds the step states, scores, branches, each step's summary, open questions, and a one-line resume hint. The folder is git-ignored, so runs are never committed.
+## What each step does (detail)
 
-- **Resume:** run `/ticketflow <TICKET>` again. Ticketflow continues from the first step that is not `done` or `skipped`. Inside Build, it continues from the first unticked task.
-- **Waiting or blocked:** if the run is `waiting-for-user` or `blocked`, Ticketflow shows the pending question or the remaining findings and waits for you.
-- **`--from <step>`:** resets that step and every later step to `pending` and restarts there.
-- **`--status`:** prints the summary and the resume hint without doing any work.
-- **No ticket key:** every command falls back to the most recently updated run.
+### 01 — Intake
 
-## 8. Audit scoring
+- Pulls from Jira: summary, description, acceptance criteria, comments, links, labels, etc.
+- Classifies the ticket and writes **01 Intake** in `RUN.md`.
+- Does **not** invent acceptance criteria; if the ticket has none, that becomes an open question for Step 02.
 
-**Functionality (0 to 10)**
+### 02a — Investigate (bugs only)
 
-| Criterion | Weight |
-|-----------|--------|
-| Acceptance-criteria coverage | 40% |
-| Edge cases and error handling | 20% |
-| Tests added and passing | 20% |
-| Regression risk and live verification | 20% |
+- **Read-only:** no application code edits.
+- Asks about repro, environment, expected behavior if unclear.
+- Explores the codebase, `git log` / `git blame`, tests.
+- Writes: root cause, **confidence N/100**, alternatives ruled out, fix plan as a checklist copied into **03 Build**.
+- **Above 70 confidence:** continues to Build. **70 or below:** waits for your approval.
 
-Backend performance (latency, query count and N+1, blocking calls, memory) is also checked here.
+### 02b — Blueprint (improvements & new requirements)
 
-**UI/UX (0 to 10)**: visual consistency with the design system, loading, empty, and error states, responsive behavior, accessibility, motion quality, and frontend performance. If the change has no UI, UI/UX is recorded as `n/a` and does not block.
+- **Read-only** with the same ask-first rule.
+- Plan sections: Goal, Scope, Out of scope, Affected files, Data/API, UI spec (repo conventions first; default shadcn + Tailwind if unspecified), ordered tasks, test plan, risks, **AC → task** table.
+- When complete, continues to Build.
 
-**Thermo-nuclear (pass or fail)**: `pass` means the `thermo-nuclear-code-quality-review` skill found no presumptive blockers.
+### 03 — Build
 
-**Pass condition:** functionality at least 8, UI/UX at least 8 (or `n/a`), and thermo-nuclear `pass`. Every deduction must cite a `file:line` or a screenshot.
+- Executes the checklist; ticks tasks in `RUN.md`.
+- Detects **your project’s stack** (not assumed React); applies [.cursor/skills/ticketflow-build/performance.md](.cursor/skills/ticketflow-build/performance.md).
+- UI: loading, empty, error states, a11y, responsive layout when there is UI.
+- Runs repo scripts (lint, test, production build) when they exist; records **Performance notes** in `RUN.md`.
+- **Does not commit** — commits happen in Ship.
+- **Fix mode:** after a failed audit, only addresses **Open findings** in `RUN.md`.
 
-**Round cap:** a failed audit sends the open findings back to Build in fix mode, then audits again. After 3 failed rounds the run is set to `blocked` and Ticketflow asks you how to proceed.
+### 04 — Audit
 
-## 9. Branching and PRs
+Reviews the diff against `base_branch`:
 
-Ship looks for the repo's own rules first, in this order:
+1. **Functionality (0–10)** — AC coverage, edge cases, tests, live/test verification; backend performance where relevant.
+2. **UI/UX (0–10)** — design system, states, responsive, a11y, motion, frontend performance; **`n/a`** if no UI.
+3. **Thermo-nuclear** — `cursor-team-kit` code quality review on branch changes.
 
-1. `CONTRIBUTING.md`
-2. `README`
-3. `docs/`
-4. `.cursor/rules/`
-5. `.github/PULL_REQUEST_TEMPLATE*`
-6. commitlint and husky configs
-7. the naming pattern of existing remote branches (`git branch -r`)
+**Pass:** functionality ≥ 8, UI/UX ≥ 8 or `n/a`, thermo-nuclear pass → Ship.  
+**Fail:** prioritized findings → Build (fix mode) → Audit again (max 3 rounds).
 
-If a rule is found, Ship follows it exactly. If none is found, it uses this default and says so in the PR body:
+### 05 — Ship
 
-| Ticket type | Branch prefix | Example commit |
-|-------------|---------------|----------------|
-| `bug` | `bugfix/` | `fix(PROJ-123): handle empty session redirect` |
-| `improvement` | `improvement/` | `refactor(PROJ-123): <summary>` |
-| `new-requirement` | `feature/` | `feat(PROJ-123): <summary>` |
+- Discovers branching/commit rules from CONTRIBUTING, README, `.cursor/rules`, PR templates, remote branch names.
+- `git fetch`, fast-forward base if needed (stops and asks if not possible).
+- Creates branch, commits (never includes `.cursor/ticketflow/`), pushes, opens PR with template or standard sections (ticket link, summary, root cause for bugs, test notes, audit scores, screenshots).
+- **Never** force-pushes or merges the PR.
 
-Branch names follow `<prefix>/<TICKET>-<kebab-case-summary>` and are kept to about 60 characters. Commits use Conventional Commits with the ticket key. Ship never force-pushes and never merges the PR.
+---
 
-## 10. Plan mode note
+## The run file (`RUN.md`)
 
-Steps 02a Investigate and 02b Blueprint are designed for Cursor Plan mode. A command cannot switch modes for you, so start those steps in Plan mode (Shift+Tab), or switch when Ticketflow reminds you. Both steps stay read-only either way.
+Example location:
 
-## 11. Customizing
+```text
+.cursor/ticketflow/SLOTLY-42/RUN.md
+```
 
-All thresholds are defined once, in the Thresholds table of [.cursor/skills/ticketflow-shared/SKILL.md](.cursor/skills/ticketflow-shared/SKILL.md). Change them there.
+Useful frontmatter fields:
 
-| What | Default | Where to change it |
-|------|---------|--------------------|
-| Investigate confidence gate | 70 | `CONFIDENCE_GATE` in `ticketflow-shared` |
-| Audit pass score | 8 | `AUDIT_PASS_SCORE` in `ticketflow-shared` |
-| Audit round cap | 3 | `MAX_AUDIT_ROUNDS` in `ticketflow-shared` |
-| Default branch prefixes | `bugfix/`, `improvement/`, `feature/` | Step 2 of the Procedure in [.cursor/skills/ticketflow-ship/SKILL.md](.cursor/skills/ticketflow-ship/SKILL.md), or add a branching rule to the repo (it takes precedence) |
-| Default UI stack | shadcn/ui + Tailwind CSS | Global rule 5 in `ticketflow-shared` (the repo's existing UI stack always wins) |
+- `status`: `in-progress` | `waiting-for-user` | `blocked` | `done`
+- `current_step`, `steps.*`, `confidence` (bugs), `audit_round`, `scores`, `base_branch`, `work_branch`, `pr_url`
 
-## 12. Troubleshooting and FAQ
+Sections hold human-readable summaries; **Resume hint** is the single line the agent uses to continue.
 
-**Jira tools not found.** Intake stops when no Jira/Atlassian tools are available. Install or re-authenticate the Atlassian plugin in Cursor, then run `/tf-intake <TICKET>` again.
+You can edit `RUN.md` by hand (e.g. tweak the task list before `/tf-build`) — keep frontmatter valid YAML.
 
-**`gh` is not authenticated.** Run `gh auth login`, or enable the GitHub MCP. If the branch was already pushed, run `/tf-ship <TICKET>` again to raise the PR.
+---
 
-**The pull is not fast-forward.** Ship stops instead of merging or rebasing. Your changes may still be in `git stash list`. Bring the base branch up to date yourself (or tell Ticketflow how to proceed), restore the stash, then run `/tf-ship <TICKET>` again.
+## Audit scoring (what “pass” means)
 
-**The run is stuck in `waiting-for-user`.** Run `/ticketflow <TICKET> --status` to see the pending question or approval. Answer it in the chat, then run `/ticketflow <TICKET>` to continue.
+| Check | Pass condition |
+|-------|----------------|
+| Functionality | ≥ 8 / 10 (deductions need evidence: file:line or test output) |
+| UI/UX | ≥ 8 / 10, or **`n/a`** when there is no UI |
+| Thermo-nuclear | **pass** (no presumptive blockers from that review) |
 
-**The run is `blocked`.** This happens after the audit round cap, a failing check that cannot be fixed within scope, or an unexpected error. Read the summary and open findings with `--status`, then either fix it by hand and run `/tf-audit <TICKET>`, restart with `--from <step>`, or tell Ticketflow to ship anyway (the override is recorded in `RUN.md`).
+Failed audit → findings list in `RUN.md` → Build fix mode → re-audit. After **3** failed rounds, status **`blocked`**; you fix manually, override and ship, or `--from build`.
 
-**Will Ticketflow write to Jira?** No, unless you explicitly ask it to.
+---
 
-## 13. Performance
+## Branching and PRs
 
-**Stack detection.** Before writing code, Build reads the project's manifests and config (for example `package.json`, lockfiles, `pyproject.toml`, `go.mod`, framework config files) and records the language, framework and version, rendering model, data layer, build tool, and platform. It never assumes React.
+Ship **always looks for repo rules first**. In this repository, [.cursor/rules/branching.mdc](.cursor/rules/branching.mdc) expects branches like `fix/SLOTLY-42-short-slug` or `feature/SLOTLY-46-short-slug`. Ticketflow maps **bug → fix**, **improvement / new requirement → feature**, and uses the ticket key from Jira.
 
-**What Build enforces.** The universal principles in [.cursor/skills/ticketflow-build/performance.md](.cursor/skills/ticketflow-build/performance.md) (measure first, do less work, avoid waterfalls and N+1, cache correctly, bound everything, ship less, clean up), plus the best practices of the detected stack. It only uses features the installed versions support; if a technique needs a newer version, it uses the repo's existing equivalent and tells you. For stacks without a profile, it applies that stack's official guidance.
+If no rule exists anywhere, defaults are:
 
-**Example stack profiles.**
+- `bugfix/`, `improvement/`, or `feature/` + ticket + kebab summary
+- Conventional Commits including the ticket id, e.g. `fix(PROJ-123): …`
 
-| Stack | Examples of what is applied |
-|-------|----------------------------|
-| React / Next.js | Server Components by default, `Suspense` with skeletons, `useOptimistic` and `useTransition` (React 19+), `next/image`, `next/font`, `next/dynamic` |
-| Vue / Nuxt | `computed` over watchers, `shallowRef`, `defineAsyncComponent`, parallel `useAsyncData` |
-| Angular | `OnPush` and signals, `@defer`, `trackBy`, `NgOptimizedImage` |
-| Node.js | No event-loop blocking, `Promise.all`, pooling, batching to prevent N+1 |
-| Python | `select_related` / `prefetch_related`, no blocking calls in async handlers, background workers |
-| Mobile | FlashList, `const` widgets, keeping the main thread free |
+PRs should follow [.cursor/rules/pr-model-attribution.mdc](.cursor/rules/pr-model-attribution.mdc) when that rule applies (model, effort, fast mode lines in the description).
 
-**Targets.**
+---
 
-| Area | Target |
-|------|--------|
-| Frontend | LCP ≤ 2.5 s, INP ≤ 200 ms, CLS ≤ 0.1, no long tasks over 50 ms; flag route growth over about 10 KB gzipped |
-| Backend | p95 latency for affected endpoints, no N+1, no blocking calls on hot paths |
-| Mobile | Frame rate, startup time, memory |
+## Troubleshooting
 
-Build records the measurements against the base branch in the Performance notes block of `RUN.md`, and says so when something cannot be measured.
+| Problem | What to do |
+|---------|------------|
+| Jira tools missing | Install/authenticate Atlassian in Cursor → `/tf-intake PROJ-123` |
+| Stuck on questions | `/ticketflow PROJ-123 --status` → answer in chat → `/ticketflow PROJ-123` |
+| Low bug confidence | Review Investigate section; approve in chat or give direction → Build |
+| Audit keeps failing | Read **Open findings**; fix or `/tf-build`; after 3 rounds, status is `blocked` — you decide |
+| `gh` not logged in | `gh auth login`, or use GitHub MCP → `/tf-ship PROJ-123` if branch already pushed |
+| Pull not fast-forward | Ship stops; check `git stash list`, update base, restore work, `/tf-ship` again |
+| Thermo-nuclear unavailable | Install `cursor-team-kit`; audit treats review as fail until it runs |
+| UI skills missing | `npx skills@latest add emilkowalski/skills`; Build/Audit still run with shadcn + Tailwind fallback |
 
-**How Audit checks it.** Frontend performance is part of the UI/UX score, and backend performance is part of the functionality score. Any clear violation of the checklist without a reason recorded in the Performance notes is a deduction.
+Ticketflow **will not** force-push, merge PRs, commit secrets, commit run folders, or write to Jira unless you explicitly ask.
+
+---
+
+## Customization
+
+Edit thresholds once in [.cursor/skills/ticketflow-shared/SKILL.md](.cursor/skills/ticketflow-shared/SKILL.md) (`CONFIDENCE_GATE`, `AUDIT_PASS_SCORE`, `MAX_AUDIT_ROUNDS`).
+
+Default UI stack when the ticket/repo is silent: **shadcn/ui + Tailwind**; existing repo patterns always win.
+
+Performance rules: [.cursor/skills/ticketflow-build/performance.md](.cursor/skills/ticketflow-build/performance.md) (detect stack first, universal principles, stack-specific examples, verification vs base branch).
+
+---
+
+## Quick reference
+
+```text
+/ticketflow PROJ-123              # full run or resume
+/ticketflow PROJ-123 --status     # read run state only
+/ticketflow PROJ-123 --from audit # redo from audit onward
+
+/tf-intake PROJ-123
+/tf-investigate PROJ-123   # bugs; Plan mode
+/tf-blueprint PROJ-123     # features; Plan mode
+/tf-build PROJ-123
+/tf-audit PROJ-123
+/tf-ship PROJ-123
+```
+
+**Orchestrator command file:** [.cursor/commands/ticketflow.md](.cursor/commands/ticketflow.md)  
+**Shared rules and RUN schema:** [.cursor/skills/ticketflow-shared/SKILL.md](.cursor/skills/ticketflow-shared/SKILL.md)

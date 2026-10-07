@@ -15,7 +15,7 @@ Ticketflow takes a Jira ticket from intake to a raised pull request in six steps
 
 ## Prerequisites
 
-- A git repository with a clean understanding of the current branch.
+- A git repository, with the run started from the branch the PR should target.
 - Jira/Atlassian tools available in Cursor (see Global rule 7).
 
 ## Thresholds
