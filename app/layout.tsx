@@ -1,17 +1,11 @@
 import type { Metadata } from "next";
-import { Atkinson_Hyperlegible, Oswald } from "next/font/google";
+import { Source_Sans_3 } from "next/font/google";
 import { Header } from "@/app/header";
 import "./globals.css";
 
-const atkinson = Atkinson_Hyperlegible({
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
-  weight: ["400", "700"],
-  variable: "--font-atkinson",
-});
-
-const oswald = Oswald({
-  subsets: ["latin"],
-  variable: "--font-oswald",
+  variable: "--font-source-sans",
 });
 
 export const metadata: Metadata = {
@@ -22,10 +16,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${atkinson.variable} ${oswald.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${sourceSans.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col font-sans">
         <Header />
         {children}
