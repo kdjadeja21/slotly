@@ -1,0 +1,13 @@
+---
+description: Branching strategy. develop-v2 is the only integration branch; every new pull request targets develop-v2. main is protected and is not a pull request target.
+alwaysApply: true
+---
+
+# Branching
+
+- main is protected and is not a pull request target. Do not commit directly to it.
+- develop-v2 is the only integration branch.
+- All work is a short-lived branch and a pull request into develop-v2, never main.
+- Branch name: <type>/SLOTLY-<number>-<short-slug>, where type is feature, fix, or chore.
+- One ticket per branch. Do not mix unrelated tickets.
+- Do not force-push main. Do not rewrite history on a branch someone else is reviewing.
